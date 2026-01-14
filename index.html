@@ -3,109 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartAbsen Checklist</title>
+    <title>SmartAbsen Pro</title>
     <style>
         :root { --h: #28a745; --i: #ffc107; --s: #17a2b8; --a: #dc3545; }
-        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; margin-bottom: 80px; }
-        .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .flex { display: flex; align-items: center; }
-        .photo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 12px; }
-        .info { flex: 1; }
-        .status-group { display: flex; justify-content: space-between; margin-top: 10px; background: #f8f9fa; padding: 8px; border-radius: 8px; }
-        .status-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; }
-        input[type="radio"] { width: 20px; height: 20px; cursor: pointer; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 15px; margin-bottom: 100px; }
+        .container { max-width: 500px; margin: auto; }
         
-        /* Tombol Kirim Melayang */
-        .footer-submit { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; justify-content: center; }
-        #btn-kirim-semua { background: #007bff; color: white; border: none; padding: 12px 40px; border-radius: 25px; font-weight: bold; width: 90%; cursor: pointer; }
+        /* Header & Search */
+        .header { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        select, .search-box { 
+            width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; 
+            border: 1px solid #ddd; box-sizing: border-box; font-size: 14px;
+        }
+        .search-box { border: 2px solid #eef0f2; margin-top: 10px; outline: none; }
+        .search-box:focus { border-color: #007bff; }
+
+        /* Card Siswa Center Layout */
+        .card-siswa { 
+            background: white; border-radius: 15px; padding: 20px; 
+            margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: center; 
+        }
+
+        /* Foto Rasio 4:3 */
+        .photo-container {
+            width: 135%;
+            max-width: 300px; /* Ukuran lebar foto */
+            aspect-ratio: 3 / 4;
+            margin: 0 auto 15px auto;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #f8f9fa;
+            border: 1px solid #eee;
+        }
+
+        .photo { width: 100%; height: 100%; object-fit: cover; }
+
+        .info h4 { margin: 10px 0 5px 0; color: #333; font-size: 17px; text-transform: uppercase; }
+        .info small { color: #888; display: block; margin-bottom: 15px; }
         
-        select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        /* Tombol Status */
+        .status-group { 
+            display: flex; justify-content: space-around; 
+            background: #fcfcfc; padding: 12px; border-radius: 10px;
+            border: 1px solid #f0f0f0;
+        }
+        .status-item { font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .status-item input { transform: scale(1.2); }
+
+        /* Floating Footer */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); text-align: center; }
+        .btn-kirim { width: 90%; max-width: 400px; background: #007bff; color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <select id="pilih-kelas" onchange="filterSiswa()"><option>Memuat Kelas...</option></select>
-    <select id="pilih-mapel"><option>Memuat Mapel...</option></select>
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0 0 15px 0; text-align:center; color:#333;">SmartAbsen</h2>
+        <select id="pilih-kelas" onchange="filterSiswa()">
+            <option value="">-- Pilih Kelas --</option>
+        </select>
+        <select id="pilih-mapel">
+            <option value="">-- Pilih Mapel --</option>
+        </select>
+        <input type="text" id="cari-nama" class="search-box" placeholder="Cari nama siswa..." onkeyup="cariSiswa()">
+    </div>
+
+    <div id="daftar-siswa">
+        <p style="text-align:center; color: #999; margin-top: 50px;">Silahkan pilih kelas...</p>
+    </div>
 </div>
 
-<div id="list-siswa"></div>
-
-<div class="footer-submit">
-    <button id="btn-kirim-semua" onclick="kirimSemuaAbsen()">KIRIM ABSENSI KELAS</button>
+<div class="footer">
+    <button id="btn-kirim-semua" class="btn-kirim" onclick="kirimSemuaAbsen()">KIRIM SEMUA ABSENSI</button>
 </div>
 
 <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzTlqHT9nV7Buj3YoL0eC_hxROPa2Nqi5OWinEJiSD-4g3ZBXc4igzj7Qs6zJIiPBygw/exec';
-    let masterSiswa = [];
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzTlqHT9nV7Buj3YoL0eC_hxROPa2Nqi5OWinEJiSD-4g3ZBXc4igzj7Qs6zJIiPBygw/exec"; // Masukkan URL Google Apps Script Anda
+    let dataMaster = [];
 
-    async function init() {
-        const res = await fetch(SCRIPT_URL);
-        const data = await res.json();
-        masterSiswa = data.siswa;
-        
-        const kelasSel = document.getElementById('pilih-kelas');
-        kelasSel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
-        data.kelas.forEach(k => kelasSel.innerHTML += `<option value="${k}">${k}</option>`);
+    // Perbaikan Link Gambar Drive
+    function fixImageUrl(url) {
+        if (!url || url.includes('placeholder')) return "https://via.placeholder.com/200x150?text=No+Foto";
+        const match = url.match(/[-\w]{25,}/);
+        if (match && url.includes('drive.google.com')) {
+            return `https://drive.google.com/thumbnail?authuser=0&sz=w400&id=${match[0]}`;
+        }
+        return url;
+    }
 
-        const mapelSel = document.getElementById('pilih-mapel');
-        mapelSel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
-        data.mapel.forEach(m => mapelSel.innerHTML += `<option value="${m}">${m}</option>`);
+    async function loadData() {
+        try {
+            const resp = await fetch(SCRIPT_URL);
+            const data = await resp.json();
+            dataMaster = data.siswa;
+            const selKelas = document.getElementById('pilih-kelas');
+            data.kelas.forEach(k => { selKelas.innerHTML += `<option value="${k}">${k}</option>`; });
+            const selMapel = document.getElementById('pilih-mapel');
+            data.mapel.forEach(m => { selMapel.innerHTML += `<option value="${m}">${m}</option>`; });
+        } catch (e) { alert("Gagal memuat data dari server."); }
     }
 
     function filterSiswa() {
         const kls = document.getElementById('pilih-kelas').value;
-        const container = document.getElementById('list-siswa');
+        const container = document.getElementById('daftar-siswa');
         container.innerHTML = "";
-        
-        masterSiswa.filter(s => s.kelas === kls).forEach((s, index) => {
+        document.getElementById('cari-nama').value = ""; // Reset pencarian
+
+        const filtered = dataMaster.filter(s => s.kelas === kls);
+        if (filtered.length === 0) return;
+
+        filtered.forEach((s, index) => {
             container.innerHTML += `
-                <div class="card card-siswa" data-nama="${s.nama}">
-                    <div class="flex">
-                        <img src="${s.foto}" class="photo" onerror="this.src='https://via.placeholder.com/50'">
-                        <div class="info"><strong>${s.nama}</strong></div>
-                    </div>
-                    <div class="status-group">
-                        <div class="status-item"><input type="radio" name="status-${index}" value="Hadir" checked> H</div>
-                        <div class="status-item"><input type="radio" name="status-${index}" value="Izin"> I</div>
-                        <div class="status-item"><input type="radio" name="status-${index}" value="Sakit"> S</div>
-                        <div class="status-item"><input type="radio" name="status-${index}" value="Alpa"> A</div>
-                    </div>
-                </div>`;
+            <div class="card-siswa" data-nama="${s.nama}">
+                <div class="photo-container">
+                    <img src="${fixImageUrl(s.foto)}" class="photo" loading="lazy" referrerpolicy="no-referrer">
+                </div>
+                <div class="info">
+                    <h4>${s.nama}</h4>
+                    <small>ID: ${s.id || '-'}</small>
+                </div>
+                <div class="status-group">
+                    <label class="status-item" style="color:var(--h)"><input type="radio" name="st-${index}" value="Hadir" checked> H</label>
+                    <label class="status-item" style="color:var(--s)"><input type="radio" name="st-${index}" value="Sakit"> S</label>
+                    <label class="status-item" style="color:var(--i)"><input type="radio" name="st-${index}" value="Izin"> I</label>
+                    <label class="status-item" style="color:var(--a)"><input type="radio" name="st-${index}" value="Alpa"> A</label>
+                </div>
+            </div>`;
         });
+    }
+
+    // Fungsi Pencarian Real-time
+    function cariSiswa() {
+        const keyword = document.getElementById('cari-nama').value.toLowerCase();
+        const cards = document.getElementsByClassName('card-siswa');
+        for (let card of cards) {
+            const nama = card.getAttribute('data-nama').toLowerCase();
+            card.style.display = nama.includes(keyword) ? "" : "none";
+        }
     }
 
     async function kirimSemuaAbsen() {
         const kls = document.getElementById('pilih-kelas').value;
         const mpl = document.getElementById('pilih-mapel').value;
         if(!kls || !mpl) return alert("Pilih Kelas & Mapel!");
-
+        
         const cards = document.querySelectorAll('.card-siswa');
-        if(cards.length === 0) return;
-
-        if(!confirm(`Kirim absensi untuk ${cards.length} siswa?`)) return;
+        if(!confirm(`Kirim absen untuk ${cards.length} siswa?`)) return;
 
         const btn = document.getElementById('btn-kirim-semua');
-        btn.innerText = "Sedang Mengirim..."; btn.disabled = true;
+        btn.innerText = "Memproses..."; btn.disabled = true;
 
         for (let card of cards) {
             const nama = card.getAttribute('data-nama');
             const status = card.querySelector('input[type="radio"]:checked').value;
-
             try {
                 await fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', // Mempercepat pengiriman massal
+                    method: 'POST', mode: 'no-cors',
                     body: JSON.stringify({nama, status, kelas:kls, mapel:mpl}) 
                 });
-            } catch(e) { console.log("Error pada: " + nama); }
+                card.style.opacity = "0.5"; // Tanda sudah terkirim
+            } catch(e) { console.error(e); }
         }
-
-        alert("Seluruh absensi berhasil dikirim!");
-        btn.innerText = "KIRIM ABSENSI KELAS"; btn.disabled = false;
+        alert("Selesai dikirim!");
+        btn.innerText = "KIRIM SEMUA ABSENSI"; btn.disabled = false;
     }
-    
-    window.onload = init;
+
+    window.onload = loadData;
 </script>
 </body>
 </html>
