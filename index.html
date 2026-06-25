@@ -86,14 +86,18 @@
     let dataMaster = [];
 
     // Perbaikan Link Gambar Drive
-    function fixImageUrl(url) {
-        if (!url || url.includes('placeholder')) return "https://via.placeholder.com/200x150?text=No+Foto";
-        const match = url.match(/[-\w]{25,}/);
-        if (match && url.includes('drive.google.com')) {
-            return `https://drive.google.com/thumbnail?authuser=0&sz=w400&id=${match[0]}`;
-        }
-        return url;
+    // Perbaikan Link Gambar Drive agar stabil dan anti-blokir
+function fixImageUrl(url) {
+    if (!url || url.includes('placeholder')) return "https://via.placeholder.com/200x150?text=No+Foto";
+    
+    // Mengekstrak ID unik dari tautan Google Drive Anda
+    const match = url.match(/[-\w]{25,}/);
+    if (match && url.includes('drive.google.com')) {
+        // Menggunakan endpoint thumbnail resmi Google Drive (Lebih cepat & aman)
+        return `https://drive.google.com/thumbnail?authuser=0&sz=w400&id=${match[0]}`;
     }
+    return url;
+}
 
     // Memuat data awal dari Google Sheet
     async function loadData() {
