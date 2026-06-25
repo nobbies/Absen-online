@@ -93,82 +93,73 @@
         return url;
     }
 
-    async function loadData() {
-        try {
-            const resp = await fetch(SCRIPT_URL);
-            const data = await resp.json();
-            dataMaster = data.siswa;
-            const selKelas = document.getElementById('pilih-kelas');
-            data.kelas.forEach(k => { selKelas.innerHTML += `<option value="${k}">${k}</option>`; });
-            const selMapel = document.getElementById('pilih-mapel');
-            data.mapel.forEach(m => { selMapel.innerHTML += `<option value="${m}">${m}</option>`; });
-        } catch (e) { alert("Gagal memuat data dari server."); }
-    }
-
-    function filterSiswa() {
-        const kls = document.getElementById('pilih-kelas').value;
-        const container = document.getElementById('daftar-siswa');
-        container.innerHTML = "";
-        document.getElementById('cari-nama').value = ""; // Reset pencarian
-
-        const filtered = dataMaster.filter(s => s.kelas === kls);
-        if (filtered.length === 0) return;
-
-        filtered.forEach((s, index) => {
-            container.innerHTML += `
-            <div class="card-siswa" data-nama="${s.nama}">
-                <div class="photo-container">
-                    <img src="${fixImageUrl(s.foto)}" class="photo" loading="lazy" referrerpolicy="no-referrer">
-                </div>
-                <div class="info">
-                    <h4>${s.nama}</h4>
-                    <small>ID: ${s.id || '-'}</small>
-                </div>
-                <div class="status-group">
-                    <label class="status-item" style="color:var(--h)"><input type="radio" name="st-${index}" value="Hadir" checked> H</label>
-                    <label class="status-item" style="color:var(--s)"><input type="radio" name="st-${index}" value="Sakit"> S</label>
-                    <label class="status-item" style="color:var(--i)"><input type="radio" name="st-${index}" value="Izin"> I</label>
-                    <label class="status-item" style="color:var(--a)"><input type="radio" name="st-${index}" value="Alpa"> A</label>
-                </div>
-            </div>`;
-        });
-    }
-
-    // Fungsi Pencarian Real-time
-    function cariSiswa() {
-        const keyword = document.getElementById('cari-nama').value.toLowerCase();
-        const cards = document.getElementsByClassName('card-siswa');
-        for (let card of cards) {
-            const nama = card.getAttribute('data-nama').toLowerCase();
-            card.style.display = nama.includes(keyword) ? "" : "none";
-        }
-    }
-
-    async function kirimSemuaAbsen() {
-        const kls = document.getElementById('pilih-kelas').value;
-        const mpl = document.getElementById('pilih-mapel').value;
-        if(!kls || !mpl) return alert("Pilih Kelas & Mapel!");
+async function loadData() {
+    const container = document.getElementById('daftar-siswa');
+    try {
+        container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Memuat data dari Google Sheets...</p>`;
         
-        const cards = document.querySelectorAll('.card-siswa');
-        if(!confirm(`Kirim absen untuk ${cards.length} siswa?`)) return;
+        const resp = await fetch(SCRIPT_URL);
+        const data = await resp.json();
+        
+        if (data.error) throw new Error(data.error);
 
-        const btn = document.getElementById('btn-kirim-semua');
-        btn.innerText = "Memproses..."; btn.disabled = true;
+        dataMaster = data.siswa;
+        
+        // Isi Dropdown Kelas
+        const selKelas = document.getElementById('pilih-kelas');
+        selKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+        data.kelas.forEach(k => { selKelas.innerHTML += `<option value="${k}">${k}</option>`; });
+        
+        // Isi Dropdown Mapel
+        const selMapel = document.getElementById('pilih-mapel');
+        selMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
+        data.mapel.forEach(m => { selMapel.innerHTML += `<option value="${m}">${m}</option>`; });
 
-        for (let card of cards) {
-            const nama = card.getAttribute('data-nama');
-            const status = card.querySelector('input[type="radio"]:checked').value;
-            try {
-                await fetch(SCRIPT_URL, { 
-                    method: 'POST', mode: 'no-cors',
-                    body: JSON.stringify({nama, status, kelas:kls, mapel:mpl}) 
-                });
-                card.style.opacity = "0.5"; // Tanda sudah terkirim
-            } catch(e) { console.error(e); }
-        }
-        alert("Selesai dikirim!");
+        container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Silahkan pilih kelas...</p>`;
+    } catch (e) { 
+        console.error(e);
+        container.innerHTML = `<p style="text-align:center; color: var(--a); margin-top: 50px;">⚠️ Gagal memuat data: ${e.message}<br>Periksa kembali Deployment Apps Script Anda.</p>`;
+    }
+}
+
+// OPTIMALISASI: Kirim semua data sekaligus dalam 1 Paket Data (Lebih Update & Cepat!)
+async function kirimSemuaAbsen() {
+    const kls = document.getElementById('pilih-kelas').value;
+    const mpl = document.getElementById('pilih-mapel').value;
+    if(!kls || !mpl) return alert("Pilih Kelas & Mapel terlebih dahulu!");
+    
+    const cards = document.querySelectorAll('.card-siswa');
+    if(cards.length === 0) return alert("Tidak ada data siswa untuk dikirim.");
+    if(!confirm(`Kirim absen untuk ${cards.length} siswa kelas ${kls}?`)) return;
+
+    const btn = document.getElementById('btn-kirim-semua');
+    btn.innerText = "Mengirim Semua Data..."; btn.disabled = true;
+
+    // Kumpulkan semua status siswa ke dalam satu Array
+    let rekapAbsen = [];
+    for (let card of cards) {
+        const nama = card.getAttribute('data-nama');
+        const status = card.querySelector('input[type="radio"]:checked').value;
+        rekapAbsen.push({ nama, status });
+    }
+
+    try {
+        // Kirim sekaligus ke Google Apps Script
+        const response = await fetch(SCRIPT_URL, { 
+            method: 'POST',
+            body: JSON.stringify({ kelas: kls, mapel: mpl, data: rekapAbsen }) 
+        });
+        
+        alert("🎉 Absensi Berhasil Dikirim dan Tersimpan!");
+        // Beri efek transparan tanda selesai
+        cards.forEach(card => card.style.opacity = "0.5");
+    } catch(e) { 
+        console.error(e); 
+        alert("Gagal mengirim data. Silakan coba lagi.");
+    } finally {
         btn.innerText = "KIRIM SEMUA ABSENSI"; btn.disabled = false;
     }
+}
 
     window.onload = loadData;
 </script>
