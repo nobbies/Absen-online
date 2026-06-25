@@ -9,7 +9,7 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 15px; margin-bottom: 100px; }
         .container { max-width: 500px; margin: auto; }
         
-        /* Header & Search */
+        /* Header & Pilihan Menu */
         .header { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         select, .search-box { 
             width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; 
@@ -18,17 +18,17 @@
         .search-box { border: 2px solid #eef0f2; margin-top: 10px; outline: none; }
         .search-box:focus { border-color: #007bff; }
 
-        /* Card Siswa Center Layout */
+        /* Tampilan Kartu Siswa */
         .card-siswa { 
             background: white; border-radius: 15px; padding: 20px; 
             margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             text-align: center; transition: opacity 0.3s ease;
         }
 
-        /* Foto Rasio 4:3 */
+        /* Bingkai Foto Rasio 3:4 */
         .photo-container {
             width: 100%;
-            max-width: 200px; /* Dioptimalkan agar pas di tengah */
+            max-width: 160px;
             aspect-ratio: 3 / 4;
             margin: 0 auto 15px auto;
             overflow: hidden;
@@ -42,7 +42,7 @@
         .info h4 { margin: 10px 0 5px 0; color: #333; font-size: 17px; text-transform: uppercase; }
         .info small { color: #888; display: block; margin-bottom: 15px; }
         
-        /* Tombol Status */
+        /* Tombol Pilihan Status (H, S, I, A) */
         .status-group { 
             display: flex; justify-content: space-around; 
             background: #fcfcfc; padding: 12px; border-radius: 10px;
@@ -51,7 +51,7 @@
         .status-item { font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
         .status-item input { transform: scale(1.2); }
 
-        /* Floating Footer */
+        /* Tombol Kirim Melayang di Bawah */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); text-align: center; z-index: 100; }
         .btn-kirim { width: 90%; max-width: 400px; background: #007bff; color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; }
         .btn-kirim:disabled { background: #ccc; cursor: not-allowed; }
@@ -81,25 +81,26 @@
 </div>
 
 <script>
-    // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+    // ==========================================
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+    // ==========================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyo2UpV5gX_c5JP9TWCYboJQpXDnJp_BIUafelk9cxf7OxdQfEbi2lxnKGlChyGpud5/exec"; 
+    
     let dataMaster = [];
 
-    // Perbaikan Link Gambar Drive
-    // Perbaikan Link Gambar Drive agar stabil dan anti-blokir
-function fixImageUrl(url) {
-    if (!url || url.includes('placeholder')) return "https://via.placeholder.com/200x150?text=No+Foto";
-    
-    // Mengekstrak ID unik dari tautan Google Drive Anda
-    const match = url.match(/[-\w]{25,}/);
-    if (match && url.includes('drive.google.com')) {
-        // Menggunakan endpoint thumbnail resmi Google Drive (Lebih cepat & aman)
-        return `https://drive.google.com/thumbnail?authuser=0&sz=w400&id=${match[0]}`;
+    // Mengubah tautan Google Drive biasa menjadi URL Thumbnail agar bisa dimuat di web
+    function fixImageUrl(url) {
+        if (!url || url.includes('placeholder')) return "https://via.placeholder.com/150x200?text=No+Foto";
+        
+        // Mengekstrak ID Unik File dari link Drive Anda
+        const match = url.match(/[-\w]{25,}/);
+        if (match && url.includes('drive.google.com')) {
+            return `https://drive.google.com/thumbnail?authuser=0&sz=w400&id=${match[0]}`;
+        }
+        return url;
     }
-    return url;
-}
 
-    // Memuat data awal dari Google Sheet
+    // Mengambil data awal saat halaman web pertama kali dibuka
     async function loadData() {
         const container = document.getElementById('daftar-siswa');
         try {
@@ -112,12 +113,12 @@ function fixImageUrl(url) {
 
             dataMaster = data.siswa;
             
-            // Isi pilihan Kelas
+            // Mengisi Dropdown Pilihan Kelas
             const selKelas = document.getElementById('pilih-kelas');
             selKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
             data.kelas.forEach(k => { selKelas.innerHTML += `<option value="${k}">${k}</option>`; });
             
-            // Isi pilihan Mapel
+            // Mengisi Dropdown Pilihan Mapel
             const selMapel = document.getElementById('pilih-mapel');
             selMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
             data.mapel.forEach(m => { selMapel.innerHTML += `<option value="${m}">${m}</option>`; });
@@ -129,29 +130,31 @@ function fixImageUrl(url) {
                 <div style="text-align:center; color: var(--a); margin-top: 50px; padding: 20px; background: white; border-radius: 15px;">
                     <h4>⚠️ Gagal Memuat Data</h4>
                     <p style="font-size: 13px; color: #666;">${e.message}</p>
-                    <small style="color:#999;">Pastikan Apps Script Anda di-deploy sebagai 'Anyone'.</small>
+                    <small style="color:#999;">Pastikan Apps Script Anda di-deploy ulang sebagai 'Web App' dengan akses 'Anyone'.</small>
                 </div>`;
         }
     }
 
-    // Filter daftar siswa berdasarkan kelas yang dipilih
+    // Menampilkan daftar siswa sesuai dengan kelas yang dipilih pengguna
     function filterSiswa() {
         const kls = document.getElementById('pilih-kelas').value;
         const container = document.getElementById('daftar-siswa');
         container.innerHTML = "";
-        document.getElementById('cari-nama').value = ""; // Reset kolom pencarian
+        document.getElementById('cari-nama').value = ""; // Bersihkan kolom pencarian tiap ganti kelas
 
         if (!kls) {
             container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Silahkan pilih kelas...</p>`;
             return;
         }
 
+        // Menyaring data siswa berdasarkan kolom C (kelas siswa) yang cocok dengan dropdown
         const filtered = dataMaster.filter(s => s.kelas === kls);
         if (filtered.length === 0) {
-            container.innerHTML = `<p style="text-align:center; color: var(--a); margin-top: 50px;">Tidak ada siswa di kelas ini.</p>`;
+            container.innerHTML = `<p style="text-align:center; color: var(--a); margin-top: 50px;">Tidak ada siswa terdaftar di kelas ini.</p>`;
             return;
         }
 
+        // Tampilkan kartu data siswa ke layar
         filtered.forEach((s, index) => {
             container.innerHTML += `
             <div class="card-siswa" data-nama="${s.nama}">
@@ -172,7 +175,7 @@ function fixImageUrl(url) {
         });
     }
 
-    // Fungsi Pencarian Real-time
+    // Fitur Pencarian Nama Siswa Secara Real-time
     function cariSiswa() {
         const keyword = document.getElementById('cari-nama').value.toLowerCase();
         const cards = document.getElementsByClassName('card-siswa');
@@ -182,7 +185,7 @@ function fixImageUrl(url) {
         }
     }
 
-    // Mengirim rekap absensi sekaligus dalam satu kali kirim (Batch Send)
+    // Mengirim seluruh status absensi satu kelas sekaligus ke Google Sheet (Batch POST)
     async function kirimSemuaAbsen() {
         const kls = document.getElementById('pilih-kelas').value;
         const mpl = document.getElementById('pilih-mapel').value;
@@ -196,7 +199,7 @@ function fixImageUrl(url) {
         btn.innerText = "Mengirim Rekap Absensi..."; 
         btn.disabled = true;
 
-        // Kumpulkan semua data status siswa ke dalam Array
+        // Kumpulkan data nama dan status pilihan radio button ke bentuk Array objek
         let rekapAbsen = [];
         cards.forEach(card => {
             const nama = card.getAttribute('data-nama');
@@ -205,23 +208,27 @@ function fixImageUrl(url) {
         });
 
         try {
-            // Mengirim 1 paket data berisi info kelas, mapel, dan seluruh rekap siswa
+            // Mengirim data paket lengkap ke Google Apps Script
             const response = await fetch(SCRIPT_URL, { 
                 method: 'POST',
                 body: JSON.stringify({ kelas: kls, mapel: mpl, data: rekapAbsen }) 
             });
             
-            alert("🎉 Rekap absensi sukses dikirim dan tersimpan di Google Sheets!");
-            cards.forEach(card => card.style.opacity = "0.5"); // Tanda visual sukses
+            const result = await response.json();
+            if (result.result === "error") throw new Error(result.message);
+            
+            alert("🎉 Rekap absensi sukses dikirim dan disimpan ke Google Sheets!");
+            cards.forEach(card => card.style.opacity = "0.5"); // Memberikan efek transparan tanda selesai
         } catch(e) { 
             console.error(e); 
-            alert("Terjadi kesalahan saat mengirim data. Silakan coba lagi.");
+            alert("Terjadi kesalahan saat mengirim data: " + e.message);
         } finally {
             btn.innerText = "KIRIM SEMUA ABSENSI"; 
             btn.disabled = false;
         }
     }
 
+    // Jalankan pemuatan data secara otomatis saat halaman web terbuka sempurna
     window.onload = loadData;
 </script>
 </body>
