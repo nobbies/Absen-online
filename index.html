@@ -95,7 +95,7 @@
         // Mengekstrak ID Unik File dari link Drive Anda
         const match = url.match(/[-\w]{25,}/);
         if (match && url.includes('drive.google.com')) {
-            return `https://drive.google.com/thumbnail?authuser=0&sz=w400&id=${match[0]}`;
+            return `https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=${match[0]}`;
         }
         return url;
     }
