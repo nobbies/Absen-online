@@ -1,195 +1,236 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Presensi Online</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartAbsen Pro v2</title>
+    <style>
+        :root { --h: #28a745; --i: #ffc107; --s: #17a2b8; --a: #dc3545; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 15px; margin-bottom: 100px; }
+        .container { max-width: 500px; margin: auto; }
+        
+        /* Header & Pilihan Menu */
+        .header { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        select, .search-box { 
+            width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; 
+            border: 1px solid #ddd; box-sizing: border-box; font-size: 14px;
+        }
+        .search-box { border: 2px solid #eef0f2; margin-top: 10px; outline: none; }
+        .search-box:focus { border-color: #007bff; }
+
+        /* Tampilan Kartu Siswa */
+        .card-siswa { 
+            background: white; border-radius: 15px; padding: 20px; 
+            margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: center; transition: opacity 0.3s ease;
+        }
+
+        /* Bingkai Foto Rasio 3:4 */
+        .photo-container {
+            width: 100%;
+            max-width: 160px;
+            aspect-ratio: 3 / 4;
+            margin: 0 auto 15px auto;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #f8f9fa;
+            border: 1px solid #eee;
+        }
+
+        .photo { width: 100%; height: 100%; object-fit: cover; }
+
+        .info h4 { margin: 10px 0 5px 0; color: #333; font-size: 17px; text-transform: uppercase; }
+        .info small { color: #888; display: block; margin-bottom: 15px; }
+        
+        /* Tombol Pilihan Status (H, S, I, A) */
+        .status-group { 
+            display: flex; justify-content: space-around; 
+            background: #fcfcfc; padding: 12px; border-radius: 10px;
+            border: 1px solid #f0f0f0;
+        }
+        .status-item { font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .status-item input { transform: scale(1.2); }
+
+        /* Tombol Kirim Melayang di Bawah */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); text-align: center; z-index: 100; }
+        .btn-kirim { width: 90%; max-width: 400px; background: #007bff; color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        .btn-kirim:disabled { background: #ccc; cursor: not-allowed; }
+    </style>
 </head>
-<body class="bg-slate-100 font-sans p-4 md:p-6">
+<body>
 
-  <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-lg border border-slate-200">
-    <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center border-b pb-3">Formulir Presensi Siswa</h2>
-    
-    <div id="statusMessage" class="hidden p-3 mb-4 text-center font-medium rounded-md"></div>
-
-    <form id="attendanceForm" onsubmit="submitPresensi(event)" class="space-y-5">
-      
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Kelas</label>
-        <select id="kelas" onchange="loadSiswa()" class="w-full p-2.5 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500" required>
-          <option value="">Memuat kelas...</option>
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0 0 15px 0; text-align:center; color:#333;">SmartAbsen Pro</h2>
+        <select id="pilih-kelas" onchange="filterSiswa()">
+            <option value="">-- Pilih Kelas --</option>
         </select>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Mata Pelajaran</label>
-        <select id="mapel" class="w-full p-2.5 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500" required>
-          <option value="">Memuat mapel...</option>
+        <select id="pilih-mapel">
+            <option value="">-- Pilih Mapel --</option>
         </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Siswa</label>
-        <select id="nama" class="w-full p-2.5 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500" required disabled>
-          <option value="">-- Pilih Kelas Terlebih Dahulu --</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Status Kehadiran</label>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer bg-green-50 hover:bg-green-100 text-green-700 font-bold">
-            <input type="radio" name="status" value="Hadir" class="mr-2" required> Hadir
-          </label>
-          <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-bold">
-            <input type="radio" name="status" value="Sakit" class="mr-2"> Sakit
-          </label>
-          <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold">
-            <input type="radio" name="status" value="Izin" class="mr-2"> Izin
-          </label>
-          <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer bg-red-50 hover:bg-red-100 text-red-700 font-bold">
-            <input type="radio" name="status" value="Alpa" class="mr-2"> Alpa
-          </label>
-          <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold col-span-2 sm:col-span-1">
-            <input type="radio" name="status" value="Dispen" class="mr-2"> Dispen
-          </label>
-        </div>
-      </div>
-
-      <div class="pt-2">
-        <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition cursor-pointer">
-          Kirim Presensi
-        </button>
-      </div>
-
-    </form>
-    
-    <div class="mt-6 text-center text-sm">
-      <a href="laporan_absen.html" class="text-blue-600 hover:underline font-medium">Lihat Laporan Rekapitulasi Absensi &rarr;</a>
+        <input type="text" id="cari-nama" class="search-box" placeholder="Cari nama siswa..." onkeyup="cariSiswa()">
     </div>
-  </div>
 
-  <script>
+    <div id="daftar-siswa">
+        <p style="text-align:center; color: #999; margin-top: 50px;">Memuat aplikasi, mohon tunggu...</p>
+    </div>
+</div>
+
+<div class="footer">
+    <button id="btn-kirim-semua" class="btn-kirim" onclick="kirimSemuaAbsen()">KIRIM SEMUA ABSENSI</button>
+</div>
+
+<script>
     // ==========================================
-    // CONFIGURATION (PASTIKAN URL SUDAH SESUAI)
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
     // ==========================================
-    // Masukkan URL Web App Google Apps Script (/exec) Anda di bawah ini:
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyo2UpV5gX_c5JP9TWCYboJQpXDnJp_BIUafelk9cxf7OxdQfEbi2lxnKGlChyGpud5/exec"; 
-    // ^ Silakan ganti nilai di atas dengan URL /exec asli milik Apps Script terbaru Anda
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyo2UpV5gX_c5JP9TWCYboJQpXDnJp_BIUafelk9cxf7OxdQfEbi2lxnKGlChyGpud5/exec"; 
+    
+    let dataMaster = [];
 
-    // Fungsi Utama Penanganan Lintas Domain (JSONP)
-    function fetchJSONP(url, callbackFunc) {
-      const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-      window[callbackName] = function(data) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        callbackFunc(data);
-      };
-      
-      const script = document.createElement('script');
-      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-      document.body.appendChild(script);
-    }
-
-    // Ambil Data Awal (Kelas & Mapel) Saat Halaman Pertama Dimuat
-    window.onload = function() {
-      fetchJSONP(`${WEB_APP_URL}?action=getInitialData`, function(options) {
-        if (options.error) {
-          showStatus("Gagal memuat database awal: " + options.error, "error");
-          return;
+    // Mengubah tautan Google Drive biasa menjadi URL Thumbnail agar bisa dimuat di web
+    function fixImageUrl(url) {
+        if (!url || url.includes('placeholder')) return "https://via.placeholder.com/150x200?text=No+Foto";
+        
+        // Mengekstrak ID Unik File dari link Drive Anda
+        const match = url.match(/[-\w]{25,}/);
+        if (match && url.includes('drive.google.com')) {
+            return `https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=${match[0]}`;
         }
-        
-        const kelasSelect = document.getElementById('kelas');
-        const mapelSelect = document.getElementById('mapel');
-        
-        kelasSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
-        mapelSelect.innerHTML = '<option value="">-- Pilih Mapel --</option>';
-        
-        options.kelas.forEach(k => { kelasSelect.innerHTML += `<option value="${k}">${k}</option>`; });
-        options.mapel.forEach(m => { mapelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
-      });
-    };
+        return url;
+    }
 
-    // Ambil Nama Siswa Secara Dinamis Ketika Kelas Dipilih
-    function loadSiswa() {
-      const kelasRaw = document.getElementById('kelas').value;
-      const siswaSelect = document.getElementById('nama');
-      
-      if (!kelasRaw) {
-        siswaSelect.innerHTML = '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>';
-        siswaSelect.disabled = true;
-        return;
-      }
-      
-      siswaSelect.innerHTML = '<option value="">Memuat daftar siswa...</option>';
-      siswaSelect.disabled = true;
-      
-      const kelas = encodeURIComponent(kelasRaw);
-      fetchJSONP(`${WEB_APP_URL}?action=getSiswa&kelas=${kelas}`, function(listSiswa) {
-        if (listSiswa.error) {
-          showStatus("Gagal memuat daftar siswa: " + listSiswa.error, "error");
-          return;
+    // Mengambil data awal saat halaman web pertama kali dibuka
+    async function loadData() {
+        const container = document.getElementById('daftar-siswa');
+        try {
+            container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Memuat data dari Google Sheets...</p>`;
+            
+            const resp = await fetch(SCRIPT_URL);
+            const data = await resp.json();
+            
+            if (data.error) throw new Error(data.error);
+
+            dataMaster = data.siswa;
+            
+            // Mengisi Dropdown Pilihan Kelas
+            const selKelas = document.getElementById('pilih-kelas');
+            selKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            data.kelas.forEach(k => { selKelas.innerHTML += `<option value="${k}">${k}</option>`; });
+            
+            // Mengisi Dropdown Pilihan Mapel
+            const selMapel = document.getElementById('pilih-mapel');
+            selMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
+            data.mapel.forEach(m => { selMapel.innerHTML += `<option value="${m}">${m}</option>`; });
+
+            container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Silahkan pilih kelas...</p>`;
+        } catch (e) { 
+            console.error(e);
+            container.innerHTML = `
+                <div style="text-align:center; color: var(--a); margin-top: 50px; padding: 20px; background: white; border-radius: 15px;">
+                    <h4>⚠️ Gagal Memuat Data</h4>
+                    <p style="font-size: 13px; color: #666;">${e.message}</p>
+                    <small style="color:#999;">Pastikan Apps Script Anda di-deploy ulang sebagai 'Web App' dengan akses 'Anyone'.</small>
+                </div>`;
         }
-        
-        siswaSelect.innerHTML = '<option value="">-- Pilih Nama Siswa --</option>';
-        listSiswa.forEach(s => { siswaSelect.innerHTML += `<option value="${s}">${s}</option>`; });
-        siswaSelect.disabled = false;
-      });
     }
 
-    // Fungsi Pengiriman Data Presensi Baru (Menggunakan Metode GET dengan Trigger Parameter Laporan/POST Alternatif)
-    function submitPresensi(event) {
-      event.preventDefault();
-      
-      const submitBtn = document.getElementById('submitBtn');
-      const kelas = encodeURIComponent(document.getElementById('kelas').value);
-      const mapel = encodeURIComponent(document.getElementById('mapel').value);
-      const nama = encodeURIComponent(document.getElementById('nama').value);
-      const statusElement = document.querySelector('input[name="status"]:checked');
-      
-      if (!statusElement) {
-        alert("Pilih status kehadiran terlebih dahulu!");
-        return;
-      }
-      const status = encodeURIComponent(statusElement.value);
+    // Menampilkan daftar siswa sesuai dengan kelas yang dipilih pengguna
+    function filterSiswa() {
+        const kls = document.getElementById('pilih-kelas').value;
+        const container = document.getElementById('daftar-siswa');
+        container.innerHTML = "";
+        document.getElementById('cari-nama').value = ""; // Bersihkan kolom pencarian tiap ganti kelas
 
-      // Mengubah tombol menjadi mode memproses data
-      submitBtn.disabled = true;
-      submitBtn.innerText = "Sedang Mengirim...";
-      showStatus("Sedang mengamankan data presensi ke Google Sheets...", "info");
-
-      // Menggunakan fetchJSONP untuk menyimpan data (Mencegah kendala CORS CORS Blokir pada metode Post)
-      // Kita menembak gerbang doGet tetapi mengirim data parameter inputan lengkap
-      const urlSubmit = `${WEB_APP_URL}?kelas=${kelas}&mapel=${mapel}&nama=${nama}&status=${status}`;
-      
-      fetchJSONP(urlSubmit, function(response) {
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Kirim Presensi";
-        
-        if (response.status === "success" || response.message) {
-          showStatus("Berhasil! Data presensi siswa telah tercatat di Google Sheets.", "success");
-          document.getElementById('attendanceForm').reset();
-          document.getElementById('nama').innerHTML = '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>';
-          document.getElementById('nama').disabled = true;
-        } else {
-          showStatus("Gagal mengirim data: " + (response.error || "Terjadi kesalahan internal"), "error");
+        if (!kls) {
+            container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Silahkan pilih kelas...</p>`;
+            return;
         }
-      });
+
+        // Menyaring data siswa berdasarkan kolom C (kelas siswa) yang cocok dengan dropdown
+        const filtered = dataMaster.filter(s => s.kelas === kls);
+        if (filtered.length === 0) {
+            container.innerHTML = `<p style="text-align:center; color: var(--a); margin-top: 50px;">Tidak ada siswa terdaftar di kelas ini.</p>`;
+            return;
+        }
+
+        // Tampilkan kartu data siswa ke layar
+        filtered.forEach((s, index) => {
+            container.innerHTML += `
+            <div class="card-siswa" data-nama="${s.nama}">
+                <div class="photo-container">
+                    <img src="${fixImageUrl(s.foto)}" class="photo" loading="lazy" referrerpolicy="no-referrer">
+                </div>
+                <div class="info">
+                    <h4>${s.nama}</h4>
+                    <small>ID: ${s.id || '-'}</small>
+                </div>
+                <div class="status-group">
+                    <label class="status-item" style="color:var(--h)"><input type="radio" name="st-${index}" value="Hadir" checked> H</label>
+                    <label class="status-item" style="color:var(--d)"><input type="radio" name="st-${index}" value="Dispen"> D</label>
+                    <label class="status-item" style="color:var(--s)"><input type="radio" name="st-${index}" value="Sakit"> S</label>
+                    <label class="status-item" style="color:var(--i)"><input type="radio" name="st-${index}" value="Izin"> I</label>
+                    <label class="status-item" style="color:var(--a)"><input type="radio" name="st-${index}" value="Alpa"> A</label>
+                </div>
+            </div>`;
+        });
     }
 
-    // Fungsi Pembantu Notifikasi Tampilan Statis/Peringatan
-    function showStatus(msg, type) {
-      const box = document.getElementById('statusMessage');
-      box.innerText = msg;
-      box.classList.remove('hidden', 'bg-blue-100', 'text-blue-800', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
-      
-      if (type === "info") box.classList.add('bg-blue-100', 'text-blue-800');
-      else if (type === "success") box.classList.add('bg-green-100', 'text-green-800');
-      else if (type === "error") box.classList.add('bg-red-100', 'text-red-800');
-      
-      box.classList.remove('hidden');
+    // Fitur Pencarian Nama Siswa Secara Real-time
+    function cariSiswa() {
+        const keyword = document.getElementById('cari-nama').value.toLowerCase();
+        const cards = document.getElementsByClassName('card-siswa');
+        for (let card of cards) {
+            const nama = card.getAttribute('data-nama').toLowerCase();
+            card.style.display = nama.includes(keyword) ? "" : "none";
+        }
     }
-  </script>
+
+    // Mengirim seluruh status absensi satu kelas sekaligus ke Google Sheet (Batch POST)
+    async function kirimSemuaAbsen() {
+        const kls = document.getElementById('pilih-kelas').value;
+        const mpl = document.getElementById('pilih-mapel').value;
+        if(!kls || !mpl) return alert("Silakan pilih Kelas dan Mapel terlebih dahulu!");
+        
+        const cards = document.querySelectorAll('.card-siswa');
+        if(cards.length === 0) return alert("Tidak ada data siswa untuk dikirim.");
+        if(!confirm(`Kirim rekap absensi untuk ${cards.length} siswa kelas ${kls}?`)) return;
+
+        const btn = document.getElementById('btn-kirim-semua');
+        btn.innerText = "Mengirim Rekap Absensi..."; 
+        btn.disabled = true;
+
+        // Kumpulkan data nama dan status pilihan radio button ke bentuk Array objek
+        let rekapAbsen = [];
+        cards.forEach(card => {
+            const nama = card.getAttribute('data-nama');
+            const status = card.querySelector('input[type="radio"]:checked').value;
+            rekapAbsen.push({ nama: nama, status: status });
+        });
+
+        try {
+            // Mengirim data paket lengkap ke Google Apps Script
+            const response = await fetch(SCRIPT_URL, { 
+                method: 'POST',
+                body: JSON.stringify({ kelas: kls, mapel: mpl, data: rekapAbsen }) 
+            });
+            
+            const result = await response.json();
+            if (result.result === "error") throw new Error(result.message);
+            
+            alert("🎉 Rekap absensi sukses dikirim dan disimpan ke Google Sheets!");
+            cards.forEach(card => card.style.opacity = "0.5"); // Memberikan efek transparan tanda selesai
+        } catch(e) { 
+            console.error(e); 
+            alert("Terjadi kesalahan saat mengirim data: " + e.message);
+        } finally {
+            btn.innerText = "KIRIM SEMUA ABSENSI"; 
+            btn.disabled = false;
+        }
+    }
+
+    // Jalankan pemuatan data secara otomatis saat halaman web terbuka sempurna
+    window.onload = loadData;
+</script>
 </body>
 </html>
