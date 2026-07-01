@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Presensi Web</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-100 font-sans p-6">
+
+  <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2 text-center">Laporan Daftar Hadir Siswa</h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kelas</label>
+        <select id="kelas" class="w-full p-2 border rounded-md bg-white"><option value="">Memuat...</option></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mapel</label>
+        <select id="mapel" class="w-full p-2 border rounded-md bg-white"><option value="">Memuat...</option></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Bulan Awal</label>
+        <input type="month" id="startMonth" class="w-full p-2 border rounded-md bg-white">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Bulan Akhir</label>
+        <input type="month" id="endMonth" class="w-full p-2 border rounded-md bg-white">
+      </div>
+    </div>
+
+    <div class="text-right mb-6">
+      <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow transition">Tampilkan Laporan</button>
+    </div>
+
+    <div id="loading" class="hidden text-center text-gray-600 font-medium my-4">Sedang memproses data...</div>
+    
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto bg-white rounded-lg overflow-hidden hidden shadow" id="reportTable">
+        <thead class="bg-blue-600 text-white text-sm uppercase">
+          <tr>
+            <th class="py-3 px-4 text-left">No</th>
+            <th class="py-3 px-4 text-left">Nama Siswa</th>
+            <th class="py-3 px-4 text-center bg-green-700">Hadir</th>
+            <th class="py-3 px-4 text-center bg-yellow-600">Sakit</th>
+            <th class="py-3 px-4 text-center bg-blue-700">Izin</th>
+            <th class="py-3 px-4 text-center bg-red-600">Alpa</th>
+            <th class="py-3 px-4 text-center bg-purple-700">Dispen</th>
+          </tr>
+        </thead>
+        <tbody id="reportContainer" class="text-gray-700 text-sm divide-y divide-gray-200"></tbody>
+      </table>
+      <div id="noData" class="text-center text-gray-500 italic mt-4 hidden">Tidak ada data yang cocok dengan kriteria filter.</div>
+    </div>
+  </div>
+
+  <script>
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby6MhIuYChYPLWKsv81hmI4ODrFmvCVrZwi1mG-IZSjMHDO1FtyeVFou2-LMtdcb11gDA/exec";
+
+    window.onload = function() {
+      const now = new Date();
+      const currentMonth = now.toISOString().slice(0, 7);
+      document.getElementById('startMonth').value = currentMonth;
+      document.getElementById('endMonth').value = currentMonth;
+
+      // Panggil API Filter menggunakan JSONP
+      fetchJSONP(`${WEB_APP_URL}?action=getFilters`, populateFilters);
+    };
+
+    function fetchJSONP(url, callbackFunc) {
+      const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callbackFunc(data);
+      };
+      const script = document.createElement('script');
+      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+      document.body.appendChild(script);
+    }
+
+    function populateFilters(options) {
+      if(options.error) { alert("Error: " + options.error); return; }
+      const kelasSelect = document.getElementById('kelas');
+      const mapelSelect = document.getElementById('mapel');
+      kelasSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+      mapelSelect.innerHTML = '<option value="">-- Pilih Mapel --</option>';
+      options.kelas.forEach(k => { kelasSelect.innerHTML += `<option value="${k}">${k}</option>`; });
+      options.mapel.forEach(m => { mapelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+    }
+
+    function loadReport() {
+      const kelas = encodeURIComponent(document.getElementById('kelas').value);
+      const mapel = encodeURIComponent(document.getElementById('mapel').value);
+      const startMonth = document.getElementById('startMonth').value;
+      const endMonth = document.getElementById('endMonth').value;
+
+      if (!kelas || !mapel || !startMonth || !endMonth) {
+        alert("Harap isi semua filter!"); return;
+      }
+
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('reportTable').classList.add('hidden');
+      document.getElementById('noData').classList.add('hidden');
+
+      const url = `${WEB_APP_URL}?action=getReport&kelas=${kelas}&mapel=${mapel}&startMonth=${startMonth}&endMonth=${endMonth}`;
+      fetchJSONP(url, displayReport);
+    }
+
+    function displayReport(reportData) {
+      document.getElementById('loading').classList.add('hidden');
+      if(reportData.error) { alert("Error: " + reportData.error); return; }
+      
+      const container = document.getElementById('reportContainer');
+      container.innerHTML = "";
+
+      if (reportData.length === 0) {
+        document.getElementById('noData').classList.remove('hidden'); return;
+      }
+
+      reportData.forEach((row, index) => {
+        container.innerHTML += `
+          <tr class="hover:bg-gray-50">
+            <td class="py-3 px-4">${index + 1}</td>
+            <td class="py-3 px-4 font-semibold text-gray-900">${row.nama}</td>
+            <td class="py-3 px-4 text-center font-bold text-green-600 bg-green-50">${row.hadir}</td>
+            <td class="py-3 px-4 text-center font-bold text-yellow-600 bg-yellow-50">${row.sakit}</td>
+            <td class="py-3 px-4 text-center font-bold text-blue-600 bg-blue-50">${row.izin}</td>
+            <td class="py-3 px-4 text-center font-bold text-red-600 bg-red-50">${row.alpa}</td>
+            <td class="py-3 px-4 text-center font-bold text-purple-600 bg-purple-50">${row.dispen}</td>
+          </tr>`;
+      });
+      document.getElementById('reportTable').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
