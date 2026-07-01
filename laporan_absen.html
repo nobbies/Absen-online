@@ -18,19 +18,16 @@
           <option value="">Memuat...</option>
         </select>
       </div>
-      
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mapel</label>
         <select id="mapel" class="w-full p-2 border rounded-md bg-white">
           <option value="">Memuat...</option>
         </select>
       </div>
-      
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Bulan Awal</label>
         <input type="month" id="startMonth" class="w-full p-2 border rounded-md bg-white">
       </div>
-      
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Bulan Akhir</label>
         <input type="month" id="endMonth" class="w-full p-2 border rounded-md bg-white">
@@ -43,13 +40,13 @@
       </button>
     </div>
 
-    <div id="loading" class="hidden text-center text-gray-600 font-medium my-4 animate-pulse">Sedang memproses data dari Google Sheets...</div>
+    <div id="loading" class="hidden text-center text-gray-600 font-medium my-4 animate-pulse">Sedang mengambil data dari Google Sheets...</div>
     
     <div class="overflow-x-auto">
       <table class="min-w-full table-auto bg-white rounded-lg overflow-hidden hidden shadow" id="reportTable">
         <thead class="bg-blue-600 text-white text-sm uppercase">
           <tr>
-            <th class="py-3 px-4 text-left w-12">No</th>
+            <th class="py-3 px-4 text-center w-12">No</th>
             <th class="py-3 px-4 text-left">Nama Siswa</th>
             <th class="py-3 px-4 text-center bg-green-700 w-20">Hadir</th>
             <th class="py-3 px-4 text-center bg-yellow-600 w-20">Sakit</th>
@@ -58,33 +55,30 @@
             <th class="py-3 px-4 text-center bg-purple-700 w-20">Dispen</th>
           </tr>
         </thead>
-        <tbody id="reportContainer" class="text-gray-700 text-sm divide-y divide-gray-200">
-          </tbody>
+        <tbody id="reportContainer" class="text-gray-700 text-sm divide-y divide-gray-200"></tbody>
       </table>
-      <div id="noData" class="text-center text-gray-500 italic mt-4 hidden">Tidak ada data rekapitulasi yang cocok dengan kriteria filter.</div>
+      <div id="noData" class="text-center text-gray-500 italic mt-4 hidden">Tidak ada data rekapitulasi yang cocok.</div>
     </div>
   </div>
 
   <script>
     // ==========================================
-    // CONFIGURATION (PENTING)
+    // JANGAN LUPA CONFIG DI SINI
     // ==========================================
-    // GANTI teks di bawah ini dengan URL Web App Apps Script terbaru Anda yang berakhiran /exec
+    // Tempelkan URL Web App (/exec) versi terbaru Anda di bawah ini
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby6MhIuYChYPLWKsv81hmI4ODrFmvCVrZwi1mG-IZSjMHDO1FtyeVFou2-LMtdcb11gDA/exec";
 
-    // Inisialisasi saat halaman pertama kali dibuka
     window.onload = function() {
-      // Mengatur default input bulan ke bulan saat ini secara otomatis
       const now = new Date();
       const currentMonth = now.toISOString().slice(0, 7);
       document.getElementById('startMonth').value = currentMonth;
       document.getElementById('endMonth').value = currentMonth;
 
-      // Memanggil data pilihan filter menggunakan request JSONP aman lintas domain
+      // Ambil dropdown filter lewat JSONP agar tidak kena CORS
       fetchJSONP(`${WEB_APP_URL}?action=getFilters`, populateFilters);
     };
 
-    // Fungsi Utama Penanganan Lintas Domain (Mencegah Error CORS GitHub -> Google)
+    // Fungsi Utama Penanganan CORS Lintas Domain
     function fetchJSONP(url, callbackFunc) {
       const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
       window[callbackName] = function(data) {
@@ -94,12 +88,10 @@
       };
       
       const script = document.createElement('script');
-      // Menambahkan parameter callback secara dinamis ke URL request
       script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
       document.body.appendChild(script);
     }
 
-    // Mengisi elemen dropdown pilihan Kelas & Mapel secara dinamis
     function populateFilters(options) {
       if(options.error) { 
         alert("Gagal memuat database filter: " + options.error); 
@@ -115,32 +107,31 @@
       options.mapel.forEach(m => { mapelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
     }
 
-    // Memproses pengiriman data filter untuk memanggil rekapitulasi data absensi
     function loadReport() {
-      const kelas = encodeURIComponent(document.getElementById('kelas').value);
-      const mapel = encodeURIComponent(document.getElementById('mapel').value);
+      const kelasRaw = document.getElementById('kelas').value;
+      const mapelRaw = document.getElementById('mapel').value;
       const startMonth = document.getElementById('startMonth').value;
       const endMonth = document.getElementById('endMonth').value;
 
-      if (!document.getElementById('kelas').value || !document.getElementById('mapel').value || !startMonth || !endMonth) {
+      if (!kelasRaw || !mapelRaw || !startMonth || !endMonth) {
         alert("Harap tentukan semua kriteria filter terlebih dahulu!"); 
         return;
       }
 
-      // Tampilkan indikator loading dan sembunyikan tabel lama
+      const kelas = encodeURIComponent(kelasRaw);
+      const mapel = encodeURIComponent(mapelRaw);
+
       document.getElementById('loading').classList.remove('hidden');
       document.getElementById('reportTable').classList.add('hidden');
       document.getElementById('noData').classList.add('hidden');
 
-      // Membuat URL request laporan terarah ke backend Google Apps Script
       const url = `${WEB_APP_URL}?action=getReport&kelas=${kelas}&mapel=${mapel}&startMonth=${startMonth}&endMonth=${endMonth}`;
       fetchJSONP(url, displayReport);
     }
 
-    // Menampilkan data rekapitulasi siswa ke dalam bentuk baris tabel
     function displayReport(reportData) {
       document.getElementById('loading').classList.add('hidden');
-      if(reportData.error) { alert("Error dari database Google: " + reportData.error); return; }
+      if(reportData.error) { alert("Error dari database: " + reportData.error); return; }
       
       const container = document.getElementById('reportContainer');
       container.innerHTML = "";
@@ -150,11 +141,10 @@
         return;
       }
 
-      // Melakukan looping data siswa hasil rekapitulasi backend
       reportData.forEach((row, index) => {
         container.innerHTML += `
           <tr class="hover:bg-gray-50 transition">
-            <td class="py-3 px-4 font-medium text-center">${index + 1}</td>
+            <td class="py-3 px-4 text-center">${index + 1}</td>
             <td class="py-3 px-4 font-semibold text-gray-900">${row.nama}</td>
             <td class="py-3 px-4 text-center font-bold text-green-600 bg-green-50">${row.hadir}</td>
             <td class="py-3 px-4 text-center font-bold text-yellow-600 bg-yellow-50">${row.sakit}</td>
@@ -164,7 +154,6 @@
           </tr>`;
       });
       
-      // Munculkan tabel laporan ke hadapan pengguna
       document.getElementById('reportTable').classList.remove('hidden');
     }
   </script>
