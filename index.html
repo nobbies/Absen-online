@@ -5,45 +5,140 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartAbsen Pro v2</title>
     <style>
-    .menu-top-right {
-    position: absolute; /* Gunakan 'fixed' jika ingin tombol tetap menempel di atas saat layar di-scroll */
-    top: 20px;
-    right: 20px;
-    z-index: 9999; /* Memastikan tombol selalu berada di lapisan paling depan */
+
+     /* Gaya Tombol di Pojok Kanan Atas */
+.top-right-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    border-radius: 50%; /* Bulat rapi seperti profil foto di gambar 1 */
+    cursor: pointer;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    color: #334155;
+    transition: all 0.2s ease;
+}
+.top-right-btn:hover {
+    background: #f8fafc;
+    transform: scale(1.05);
 }
 
-.btn-laporan {
-    display: inline-block;
-    padding: 10px 16px;
-    background-color: #2563eb; /* Warna biru modern */
-    color: #ffffff !important;
-    text-decoration: none;
+/* Latar Belakang Blur & Gelap saat Menu Aktif */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9998;
+}
+.sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Struktur Container Sidebar Meniru Gambar 2 */
+.sidebar-container {
+    position: fixed;
+    top: 0;
+    right: -280px; /* Tersembunyi di luar layar kanan */
+    width: 280px;
+    height: 100%;
+    background-color: #0f172a; /* Navy gelap premium */
+    box-shadow: -10px 0 25px -5px rgba(0, 0, 0, 0.3);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    font-weight: 600;
+}
+.sidebar-container.active {
+    right: 0; /* Slide masuk ke dalam layar */
+}
+
+/* Bagian Atas Sidebar */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #1e293b;
+}
+.sidebar-title {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.close-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.close-btn:hover {
+    color: #ffffff;
+}
+
+/* Tulisan Sub-Menu */
+.sidebar-section-title {
+    padding: 24px 20px 10px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+/* Komponen Navigasi */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px;
+}
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    color: #94a3b8;
+    text-decoration: none;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease-in-out;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
-
-.btn-laporan:hover {
-    background-color: #1d4ed8; /* Warna biru lebih gelap saat kursor di atasnya */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
+.nav-item:hover {
+    background: #1e293b;
+    color: #3b82f6;
 }
-
-/* Penyesuaian tampilan untuk layar HP agar tidak terlalu besar */
-@media (max-width: 480px) {
-    .menu-top-right {
-        top: 15px;
-        right: 15px;
-    }
-    .btn-laporan {
-        padding: 8px 12px;
-        font-size: 12px;
-        border-radius: 6px;
-    }
+/* Style untuk Menu yang Sedang Aktif/Dipilih */
+.nav-item.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    font-weight: 600;
 }
+.nav-icon {
+    margin-right: 14px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+}
+   
         :root { --h: #28a745; --i: #ffc107; --s: #17a2b8; --a: #dc3545; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 15px; margin-bottom: 100px; }
         .container { max-width: 500px; margin: auto; }
@@ -97,13 +192,33 @@
     </style>
 </head>
 <body>
+
+ <button id="menu-toggle-btn" class="top-right-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+</button>
+
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<div id="sidebar-menu" class="sidebar-container">
+    <div class="sidebar-header">
+        <span class="sidebar-title">SmartAbsen <span style="color: #3b82f6;">Pro</span></span>
+        <button id="menu-close-btn" class="close-btn">&times;</button>
+    </div>
     
-<div class="menu-top-right">
-    <a href="laporan_absen.html" class="btn-laporan">
-        📊 Laporan Absen
-    </a>
+    <div class="sidebar-section-title">MENU</div>
+    
+    <nav class="sidebar-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">📱</span>
+            <span class="nav-text">Absensi Utama</span>
+        </a>
+        <a href="laporan_absen.html" class="nav-item active">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">Laporan Absensi</span>
+        </a>
+    </nav>
 </div>
-    
+   
 <div class="container">
     <div class="header">
         <h2 style="margin:0 0 15px 0; text-align:center; color:#333;">SmartAbsen Pro</h2>
@@ -276,6 +391,25 @@
 
     // Jalankan pemuatan data secara otomatis saat halaman web terbuka sempurna
     window.onload = loadData;
+
+    document.addEventListener("DOMContentLoaded", function() {
+    const menuBtn = document.getElementById('menu-toggle-btn');
+    const closeBtn = document.getElementById('menu-close-btn');
+    const sidebar = document.getElementById('sidebar-menu');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    // Fungsi untuk membuka dan menutup menu
+    function toggleMenu() {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    // Event Listener saat tombol diclick
+    menuBtn.addEventListener('click', toggleMenu);
+    closeBtn.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu); // Menutup jika area luar diklik
+});
+    
 </script>
 </body>
 </html>
