@@ -5,234 +5,232 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartAbsen Pro v2</title>
     <style>
-        :root { --h: #28a745; --i: #ffc107; --s: #17a2b8; --a: #dc3545; --d: #6f42c1; }
+        :root { --h: #28a745; --i: #ffc107; --s: #17a2b8; --a: #dc3545; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 15px; margin-bottom: 100px; }
         .container { max-width: 500px; margin: auto; }
         
         /* Header & Pilihan Menu */
         .header { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         select, .search-box { 
-            width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; \r\n            border: 1px solid #ddd; box-sizing: border-box; font-size: 14px;
+            width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; 
+            border: 1px solid #ddd; box-sizing: border-box; font-size: 14px;
         }
         .search-box { border: 2px solid #eef0f2; margin-top: 10px; outline: none; }
-        .search-box:focus { border-color: #6c757d; }
+        .search-box:focus { border-color: #007bff; }
 
-        /* Siswa Card */
-        .siswa-card { 
-            background: white; padding: 15px; border-radius: 15px; margin-bottom: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 10px;
+        /* Tampilan Kartu Siswa */
+        .card-siswa { 
+            background: white; border-radius: 15px; padding: 20px; 
+            margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: center; transition: opacity 0.3s ease;
         }
-        .siswa-name { font-weight: 600; color: #333; font-size: 15px; }
+
+        /* Bingkai Foto Rasio 3:4 */
+        .photo-container {
+            width: 100%;
+            max-width: 160px;
+            aspect-ratio: 3 / 4;
+            margin: 0 auto 15px auto;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #f8f9fa;
+            border: 1px solid #eee;
+        }
+
+        .photo { width: 100%; height: 100%; object-fit: cover; }
+
+        .info h4 { margin: 10px 0 5px 0; color: #333; font-size: 17px; text-transform: uppercase; }
+        .info small { color: #888; display: block; margin-bottom: 15px; }
         
-        /* Opsi Radio Button Grid */
-        .options-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-        .btn-radio { position: relative; text-align: center; }
-        .btn-radio input[type="radio"] { 
-            position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; 
+        /* Tombol Pilihan Status (H, S, I, A) */
+        .status-group { 
+            display: flex; justify-content: space-around; 
+            background: #fcfcfc; padding: 12px; border-radius: 10px;
+            border: 1px solid #f0f0f0;
         }
-        .btn-radio label { 
-            display: block; padding: 10px 0; font-size: 12px; font-weight: bold; 
-            border-radius: 8px; background: #f8f9fa; color: #6c757d; border: 1px solid #e9ecef;
-            transition: all 0.2s ease;
-        }
+        .status-item { font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .status-item input { transform: scale(1.2); }
 
-        /* Warna Aktif Pilihan */
-        .btn-radio input[value="Hadir"]:checked + label { background: var(--h); color: white; border-color: var(--h); }
-        .btn-radio input[value="Sakit"]:checked + label { background: var(--i); color: white; border-color: var(--i); }
-        .btn-radio input[value="Izin"]:checked + label { background: var(--s); color: white; border-color: var(--s); }
-        .btn-radio input[value="Alpa"]:checked + label { background: var(--a); color: white; border-color: var(--a); }
-        .btn-radio input[value="Dispen"]:checked + label { background: var(--d); color: white; border-color: var(--d); }
-
-        /* Button Aksi Bawah Fixed */
-        .footer-action { 
-            position: fixed; bottom: 0; left: 0; right: 0; background: white; 
-            padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); display: flex; justify-content: center;
-        }
-        .btn-submit { 
-            width: 100%; max-width: 470px; background: #007bff; color: white; border: none; 
-            padding: 15px; font-weight: bold; border-radius: 12px; font-size: 15px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,123,255,0.3); transition: background 0.2s;
-        }
-        .btn-submit:hover { background: #0056b3; }
-        .btn-submit:disabled { background: #b6d4fe; cursor: not-allowed; box-shadow: none; }
-        
-        #loading-txt { text-center: center; color: #888; font-style: italic; margin-top: 20px; display: none;}
+        /* Tombol Kirim Melayang di Bawah */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); text-align: center; z-index: 100; }
+        .btn-kirim { width: 90%; max-width: 400px; background: #007bff; color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        .btn-kirim:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h3 style="margin:0 0 15px 0; text-align:center; color:#222;">SmartAbsen Pro v2</h3>
-        <select id="select-kelas" onchange="fetchSiswa()">
-            <option value="">Memuat Kelas...</option>
+        <h2 style="margin:0 0 15px 0; text-align:center; color:#333;">SmartAbsen Pro</h2>
+        <select id="pilih-kelas" onchange="filterSiswa()">
+            <option value="">-- Pilih Kelas --</option>
         </select>
-        <select id="select-mapel">
-            <option value="">Memuat Mata Pelajaran...</option>
+        <select id="pilih-mapel">
+            <option value="">-- Pilih Mapel --</option>
         </select>
-        <input type="text" id="search" class="search-box" placeholder="Cari nama siswa..." onkeyup="filterSiswa()" disabled>
+        <input type="text" id="cari-nama" class="search-box" placeholder="Cari nama siswa..." onkeyup="cariSiswa()">
     </div>
 
-    <div id="daftar-siswa"></div>
-    <div id="loading-txt">Sedang mengambil daftar siswa...</div>
+    <div id="daftar-siswa">
+        <p style="text-align:center; color: #999; margin-top: 50px;">Memuat aplikasi, mohon tunggu...</p>
+    </div>
 </div>
 
-<div class="footer-action">
-    <button class="btn-submit" id="btn-kirim-semua" onclick="kirimSemuaAbsensi()" disabled>KIRIM SEMUA ABSENSI</button>
+<div class="footer">
+    <button id="btn-kirim-semua" class="btn-kirim" onclick="kirimSemuaAbsen()">KIRIM SEMUA ABSENSI</button>
 </div>
 
 <script>
     // ==========================================
-    // PASTI KAN URL SCRIPT SUDAH RE-DEPLOY TERBARU
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
     // ==========================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/1UzqWGBKjHNcnBSz3UexIktAF7JY5-E13qiAo5AIXo2o/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyo2UpV5gX_c5JP9TWCYboJQpXDnJp_BIUafelk9cxf7OxdQfEbi2lxnKGlChyGpud5/exec"; 
+    
+    let dataMaster = [];
 
-    // Fungsi Utama JSONP Penembus Hambatan CORS Browser
-    function fetchJSONP(url, callbackFunc) {
-        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-        window[callbackName] = function(data) {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            callbackFunc(data);
-        };
-        const script = document.createElement('script');
-        script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-        document.body.appendChild(script);
-    }
-
-    // 1. Ambil data Dropdown Awal secara otomatis saat web dibuka
-    window.onload = function() {
-        fetchJSONP(`${SCRIPT_URL}?action=getInitialData`, function(options) {
-            if (options.error) {
-                alert("Gagal memuat basis data awal: " + options.error);
-                return;
-            }
-            const klsSelect = document.getElementById('select-kelas');
-            const mplSelect = document.getElementById('select-mapel');
-            
-            klsSelect.innerHTML = '<option value="">-- PILIH KELAS --</option>';
-            mplSelect.innerHTML = '<option value="">-- PILIH MAPEL --</option>';
-            
-            options.kelas.forEach(k => { klsSelect.innerHTML += `<option value="${k}">${k}</option>`; });
-            options.mapel.forEach(m => { mplSelect.innerHTML += `<option value="${m}">${m}</option>`; });
-        });
-    };
-
-    // 2. Ambil daftar siswa ketika opsi kelas dirubah
-    function fetchSiswa() {
-        const kls = document.getElementById('select-kelas').value;
-        const container = document.getElementById('daftar-siswa');
-        const loadTxt = document.getElementById('loading-txt');
-        const searchInput = document.getElementById('search');
-        const btnKirim = document.getElementById('btn-kirim-semua');
-
-        container.innerHTML = "";
-        searchInput.value = "";
-        searchInput.disabled = true;
-        btnKirim.disabled = true;
-
-        if (!kls) return;
-
-        loadTxt.style.display = "block";
+    // Mengubah tautan Google Drive biasa menjadi URL Thumbnail agar bisa dimuat di web
+    function fixImageUrl(url) {
+        if (!url || url.includes('placeholder')) return "https://via.placeholder.com/150x200?text=No+Foto";
         
-        fetchJSONP(`${SCRIPT_URL}?action=getSiswa&kelas=${encodeURIComponent(kls)}`, function(listSiswa) {
-            loadTxt.style.display = "none";
-            if (listSiswa.error) {
-                alert("Gagal memuat siswa: " + listSiswa.error);
-                return;
-            }
-
-            if (listSiswa.length === 0) {
-                container.innerHTML = "<p style='text-align:center; color:#888;'>Tidak ada siswa di kelas ini.</p>";
-                return;
-            }
-
-            // Loop siswa dan buatkan kartu absensi radio button
-            listSiswa.forEach((nama, index) => {
-                container.innerHTML += `
-                    <div class="siswa-card" data-nama="${nama}">
-                        <div class="siswa-name">${index + 1}. ${nama}</div>
-                        <div class="options-grid">
-                            <div class="btn-radio">
-                                <input type="radio" name="status-${index}" id="h-${index}" value="Hadir" checked>
-                                <label for="h-${index}">H</label>
-                            </div>
-                            <div class="btn-radio">
-                                <input type="radio" name="status-${index}" id="s-${index}" value="Sakit">
-                                <label for="s-${index}">S</label>
-                            </div>
-                            <div class="btn-radio">
-                                <input type="radio" name="status-${index}" id="i-${index}" value="Izin">
-                                <label for="i-${index}">I</label>
-                            </div>
-                            <div class="btn-radio">
-                                <input type="radio" name="status-${index}" id="a-${index}" value="Alpa">
-                                <label for="a-${index}">A</label>
-                            </div>
-                            <div class="btn-radio">
-                                <input type="radio" name="status-${index}" id="d-${index}" value="Dispen">
-                                <label for="d-${index}">D</label>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-
-            searchInput.disabled = false;
-            btnKirim.disabled = false;
-        });
+        // Mengekstrak ID Unik File dari link Drive Anda
+        const match = url.match(/[-\w]{25,}/);
+        if (match && url.includes('drive.google.com')) {
+            return `https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=${match[0]}`;
+        }
+        return url;
     }
 
-    // 3. Fitur Pencarian Realtime Nama Siswa
+    // Mengambil data awal saat halaman web pertama kali dibuka
+    async function loadData() {
+        const container = document.getElementById('daftar-siswa');
+        try {
+            container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Memuat data dari Google Sheets...</p>`;
+            
+            const resp = await fetch(SCRIPT_URL);
+            const data = await resp.json();
+            
+            if (data.error) throw new Error(data.error);
+
+            dataMaster = data.siswa;
+            
+            // Mengisi Dropdown Pilihan Kelas
+            const selKelas = document.getElementById('pilih-kelas');
+            selKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            data.kelas.forEach(k => { selKelas.innerHTML += `<option value="${k}">${k}</option>`; });
+            
+            // Mengisi Dropdown Pilihan Mapel
+            const selMapel = document.getElementById('pilih-mapel');
+            selMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
+            data.mapel.forEach(m => { selMapel.innerHTML += `<option value="${m}">${m}</option>`; });
+
+            container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Silahkan pilih kelas...</p>`;
+        } catch (e) { 
+            console.error(e);
+            container.innerHTML = `
+                <div style="text-align:center; color: var(--a); margin-top: 50px; padding: 20px; background: white; border-radius: 15px;">
+                    <h4>⚠️ Gagal Memuat Data</h4>
+                    <p style="font-size: 13px; color: #666;">${e.message}</p>
+                    <small style="color:#999;">Pastikan Apps Script Anda di-deploy ulang sebagai 'Web App' dengan akses 'Anyone'.</small>
+                </div>`;
+        }
+    }
+
+    // Menampilkan daftar siswa sesuai dengan kelas yang dipilih pengguna
     function filterSiswa() {
-        const query = document.getElementById('search').value.toLowerCase();
-        const cards = document.querySelectorAll('.siswa-card');
-        cards.forEach(card => {
-            const nama = card.getAttribute('data-nama').toLowerCase();
-            card.style.display = nama.includes(query) ? "flex" : "none";
-        });
-    }
+        const kls = document.getElementById('pilih-kelas').value;
+        const container = document.getElementById('daftar-siswa');
+        container.innerHTML = "";
+        document.getElementById('cari-nama').value = ""; // Bersihkan kolom pencarian tiap ganti kelas
 
-    // 4. Proses Kirim Massal Data Rekap Absen Kelas ke Google Sheets
-    function kirimSemuaAbsensi() {
-        const kls = document.getElementById('select-kelas').value;
-        const mpl = document.getElementById('select-mapel').value;
-        const cards = document.querySelectorAll('.siswa-card');
-        const btn = document.getElementById('btn-kirim-semua');
-
-        if (!kls || !mpl) {
-            alert("Harap tentukan Kelas dan Mata Pelajaran terlebih dahulu!");
+        if (!kls) {
+            container.innerHTML = `<p style="text-align:center; color: #999; margin-top: 50px;">Silahkan pilih kelas...</p>`;
             return;
         }
 
+        // Menyaring data siswa berdasarkan kolom C (kelas siswa) yang cocok dengan dropdown
+        const filtered = dataMaster.filter(s => s.kelas === kls);
+        if (filtered.length === 0) {
+            container.innerHTML = `<p style="text-align:center; color: var(--a); margin-top: 50px;">Tidak ada siswa terdaftar di kelas ini.</p>`;
+            return;
+        }
+
+        // Tampilkan kartu data siswa ke layar
+        filtered.forEach((s, index) => {
+            container.innerHTML += `
+            <div class="card-siswa" data-nama="${s.nama}">
+                <div class="photo-container">
+                    <img src="${fixImageUrl(s.foto)}" class="photo" loading="lazy" referrerpolicy="no-referrer">
+                </div>
+                <div class="info">
+                    <h4>${s.nama}</h4>
+                    <small>ID: ${s.id || '-'}</small>
+                </div>
+                <div class="status-group">
+                    <label class="status-item" style="color:var(--h)"><input type="radio" name="st-${index}" value="Hadir" checked> H</label>
+                    <label class="status-item" style="color:var(--d)"><input type="radio" name="st-${index}" value="Dispen"> D</label>
+                    <label class="status-item" style="color:var(--s)"><input type="radio" name="st-${index}" value="Sakit"> S</label>
+                    <label class="status-item" style="color:var(--i)"><input type="radio" name="st-${index}" value="Izin"> I</label>
+                    <label class="status-item" style="color:var(--a)"><input type="radio" name="st-${index}" value="Alpa"> A</label>
+                </div>
+            </div>`;
+        });
+    }
+
+    // Fitur Pencarian Nama Siswa Secara Real-time
+    function cariSiswa() {
+        const keyword = document.getElementById('cari-nama').value.toLowerCase();
+        const cards = document.getElementsByClassName('card-siswa');
+        for (let card of cards) {
+            const nama = card.getAttribute('data-nama').toLowerCase();
+            card.style.display = nama.includes(keyword) ? "" : "none";
+        }
+    }
+
+    // Mengirim seluruh status absensi satu kelas sekaligus ke Google Sheet (Batch POST)
+    async function kirimSemuaAbsen() {
+        const kls = document.getElementById('pilih-kelas').value;
+        const mpl = document.getElementById('pilih-mapel').value;
+        if(!kls || !mpl) return alert("Silakan pilih Kelas dan Mapel terlebih dahulu!");
+        
+        const cards = document.querySelectorAll('.card-siswa');
+        if(cards.length === 0) return alert("Tidak ada data siswa untuk dikirim.");
+        if(!confirm(`Kirim rekap absensi untuk ${cards.length} siswa kelas ${kls}?`)) return;
+
+        const btn = document.getElementById('btn-kirim-semua');
         btn.innerText = "Mengirim Rekap Absensi..."; 
         btn.disabled = true;
 
-        // Menyusun kumpulan data nama dan status menjadi satu paket data ringkas
+        // Kumpulkan data nama dan status pilihan radio button ke bentuk Array objek
         let rekapAbsen = [];
         cards.forEach(card => {
             const nama = card.getAttribute('data-nama');
             const status = card.querySelector('input[type="radio"]:checked').value;
-            rekapAbsen.push({ n: nama, s: status }); // Menggunakan singkatan agar ukuran URL efisien
+            rekapAbsen.push({ nama: nama, status: status });
         });
 
-        // Mengonversi data paket siswa menjadi string aman URL base64/JSON string
-        const dataPayload = encodeURIComponent(JSON.stringify(rekapAbsen));
-        const finalUrl = `${SCRIPT_URL}?action=bulkInsert&kelas=${encodeURIComponent(kls)}&mapel=${encodeURIComponent(mpl)}&rekap=${dataPayload}`;
-
-        // Kirim menggunakan gerbang aman fetchJSONP
-        fetchJSONP(finalUrl, function(result) {
+        try {
+            // Mengirim data paket lengkap ke Google Apps Script
+            const response = await fetch(SCRIPT_URL, { 
+                method: 'POST',
+                body: JSON.stringify({ kelas: kls, mapel: mpl, data: rekapAbsen }) 
+            });
+            
+            const result = await response.json();
+            if (result.result === "error") throw new Error(result.message);
+            
+            alert("🎉 Rekap absensi sukses dikirim dan disimpan ke Google Sheets!");
+            cards.forEach(card => card.style.opacity = "0.5"); // Memberikan efek transparan tanda selesai
+        } catch(e) { 
+            console.error(e); 
+            alert("Terjadi kesalahan saat mengirim data: " + e.message);
+        } finally {
             btn.innerText = "KIRIM SEMUA ABSENSI"; 
             btn.disabled = false;
-
-            if (result.status === "success") {
-                alert("🎉 Rekap absensi sukses dikirim dan disimpan ke Google Sheets!");
-                cards.forEach(card => card.style.opacity = "0.5");
-            } else {
-                alert("Gagal menyimpan rekap: " + (result.error || "Terjadi kesalahan internal"));
-            }
-        });
+        }
     }
-</script>
 
+    // Jalankan pemuatan data secara otomatis saat halaman web terbuka sempurna
+    window.onload = loadData;
+</script>
 </body>
 </html>
