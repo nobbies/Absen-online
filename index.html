@@ -5,6 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartAbsen Pro v2</title>
     <style>
+    .menu-top-right {
+    position: absolute; /* Gunakan 'fixed' jika ingin tombol tetap menempel di atas saat layar di-scroll */
+    top: 20px;
+    right: 20px;
+    z-index: 9999; /* Memastikan tombol selalu berada di lapisan paling depan */
+}
+
+.btn-laporan {
+    display: inline-block;
+    padding: 10px 16px;
+    background-color: #2563eb; /* Warna biru modern */
+    color: #ffffff !important;
+    text-decoration: none;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-laporan:hover {
+    background-color: #1d4ed8; /* Warna biru lebih gelap saat kursor di atasnya */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+/* Penyesuaian tampilan untuk layar HP agar tidak terlalu besar */
+@media (max-width: 480px) {
+    .menu-top-right {
+        top: 15px;
+        right: 15px;
+    }
+    .btn-laporan {
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+}
         :root { --h: #28a745; --i: #ffc107; --s: #17a2b8; --a: #dc3545; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 15px; margin-bottom: 100px; }
         .container { max-width: 500px; margin: auto; }
@@ -59,8 +98,8 @@
 </head>
 <body>
     
-<div class="absolute top-4 right-4 z-50">
-    <a href="laporan_absen.html" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 text-sm sm:text-base">
+<div class="menu-top-right">
+    <a href="laporan_absen.html" class="btn-laporan">
         📊 Laporan Absen
     </a>
 </div>
