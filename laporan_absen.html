@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Matriks Absensi - SmartAbsen Pro</title>
+    <title>Rekap Matriks Absensi Detail - SmartAbsen Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         @media print {
@@ -42,7 +42,7 @@
     <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         
         <div class="text-center md:text-left border-b border-slate-200 pb-4">
-            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">JURNAL REKAPITULASI PRESENSI SISWA</h1>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">JURNAL REKAPITULASI PRESENSI SISWA DETIL</h1>
             <p id="sub-judul" class="text-sm text-slate-500 mt-1">Silakan tentukan filter Kelas & Mapel terlebih dahulu.</p>
         </div>
 
@@ -95,18 +95,24 @@
     </main>
 
     <script>
-        // DATA LOG ABSENSI (diambil dari Sheet Log_Absen)
+        // DATA LOG ABSENSI (Sesuai struktur data dari file absensi - Log_Absen.csv Anda)
+        // Format Tanggal disesuaikan agar dibaca otomatis (Format asal: M/D/YYYY atau YYYY-MM-DD)
         const DATA_LOG_ABSEN = [
-            { tanggal: "2026-06-01", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
-            { tanggal: "2026-06-01", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
-            { tanggal: "2026-06-08", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "I" },
-            { tanggal: "2026-06-08", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
-            { tanggal: "2026-06-15", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
-            { tanggal: "2026-06-15", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "A" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "ALLUNA MAURENTS SONIADEWI", status: "Hadir" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "HASAN ALFATAH", status: "Dispen" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DANA DIVA PUTRA SINAWA", status: "Sakit" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DIMAS SUDANTA", status: "Izin" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE SAKKA SUGYANTARA", status: "Alpa" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I KOMANG ADI WIJAYA KUSUMA", status: "Hadir" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I MADE BAYU KURNIA DANISWARA", status: "Dispen" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I MADE DEVTA INDRAWAN PUTRA", status: "Sakit" },
+            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I MADE YUDA PRAMANA", status: "Izin" },
             
-            // Contoh data kelas lain
-            { tanggal: "2026-06-02", nama: "I Gede Ananda", kelas: "XII TKJ 2", mapel: "Jaringan", status: "H" },
-            { tanggal: "2026-06-09", nama: "I Gede Ananda", kelas: "XII TKJ 2", mapel: "Jaringan", status: "S" }
+            // Log pertemuan kedua (Contoh tanggal fiktif berikutnya)
+            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "ALLUNA MAURENTS SONIADEWI", status: "Hadir" },
+            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "HASAN ALFATAH", status: "Hadir" },
+            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DANA DIVA PUTRA SINAWA", status: "Hadir" },
+            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DIMAS SUDANTA", status: "Alpa" }
         ];
 
         const filterKelas = document.getElementById('filter-kelas');
@@ -120,7 +126,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             setupDropdowns();
-            // Jalankan fungsi filter saat ada perubahan input dropdown
             [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
                 el.addEventListener('change', generateMatrixTable);
             });
@@ -137,13 +142,23 @@
             listMapel.forEach(m => filterMapel.options.add(new Option(m, m)));
         }
 
+        // Fungsi pembantu untuk mengubah tanggal format "M/D/YYYY" ke string pembanding "YYYY-MM"
+        function dapatkanFormatBulan(stringTanggal) {
+            const bagian = stringTanggal.split('/');
+            if(bagian.length === 3) {
+                const tahun = bagian[2];
+                const bulan = bagian[0].padStart(2, '0');
+                return `${tahun}-${bulan}`;
+            }
+            return stringTanggal.substring(0, 7); // Jika fallback memakai YYYY-MM-DD
+        }
+
         function generateMatrixTable() {
             const kelasAktif = filterKelas.value;
             const mapelAktif = filterMapel.value;
             const blnAwal = filterBulanAwal.value;
             const blnAkhir = filterBulanAkhir.value;
 
-            // Validasi: Wajib isi Kelas dan Mapel
             if (!kelasAktif || !mapelAktif) {
                 tableHead.innerHTML = "";
                 tableBody.innerHTML = "";
@@ -155,9 +170,9 @@
             filterPrompt.classList.add('hidden');
             subJudul.innerText = `Kelas: ${kelasAktif} | Mata Pelajaran: ${mapelAktif}`;
 
-            // 1. Saring data mentah berdasarkan filter yang ditentukan guru
+            // 1. Saring data berdasarkan filter input guru
             const dataDisaring = DATA_LOG_ABSEN.filter(item => {
-                const blnItem = item.tanggal.substring(0, 7);
+                const blnItem = dapatkanFormatBulan(item.tanggal);
                 return item.kelas === kelasAktif &&
                        item.mapel === mapelAktif &&
                        (!blnAwal || blnItem >= blnAwal) &&
@@ -165,70 +180,70 @@
             });
 
             // 2. Kumpulkan daftar tanggal unik & daftar nama siswa unik secara berurutan
-            const daftarTanggal = [...new Set(dataDisaring.map(item => item.tanggal))].sort();
+            const daftarTanggal = [...new Set(dataDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
             const daftarSiswa = [...new Set(dataDisaring.map(item => item.nama))].sort();
 
-            // 3. SUSUN KOLOM HEADER TABEL (Dinamis Berjejer ke Kanan)
+            // 3. SUSUN KOLOM HEADER TABEL (Dipisahkan Mandiri)
             let headHTML = `
                 <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                    <th class="p-3 pl-5 text-center w-12 bg-slate-950">No</th>
-                    <th class="p-3 sticky-col min-w-[200px] bg-slate-950 text-left">Nama Lengkap Siswa</th>
+                    <th class="p-3 text-center w-12 bg-slate-950">No</th>
+                    <th class="p-3 sticky-col min-w-[220px] bg-slate-950 text-left">Nama Lengkap Siswa</th>
                     ${daftarTanggal.map(tgl => {
-                        // Memotong format "2026-06-15" menjadi "15/06" agar kolom tidak terlalu lebar di layar
-                        const komponen = tgl.split('-');
-                        const tglPendek = komponen.length === 3 ? `${komponen[2]}/${komponen[1]}` : tgl;
-                        return `<th class="p-3 text-center min-w-[60px] border-l border-slate-800">${tglPendek}</th>`;
+                        const bagian = tgl.split('/');
+                        const tglDisplay = bagian.length === 3 ? `${bagian[1]}/${bagian[0]}` : tgl; // format d/m
+                        return `<th class="p-3 text-center min-w-[65px] border-l border-slate-800">${tglDisplay}</th>`;
                     }).join('')}
-                    <th class="p-3 text-center border-l border-slate-800 bg-emerald-900 text-white font-bold">H</th>
-                    <th class="p-3 text-center border-l border-slate-800 bg-amber-800 text-white font-bold">I/S</th>
-                    <th class="p-3 text-center border-l border-slate-800 bg-rose-900 text-white font-bold">A</th>
+                    <th class="p-3 text-center border-l border-slate-800 bg-emerald-950 text-emerald-400 font-bold min-w-[45px]">H</th>
+                    <th class="p-3 text-center border-l border-slate-700 bg-sky-950 text-sky-400 font-bold min-w-[45px]">D</th>
+                    <th class="p-3 text-center border-l border-slate-700 bg-indigo-950 text-indigo-400 font-bold min-w-[45px]">I</th>
+                    <th class="p-3 text-center border-l border-slate-700 bg-amber-950 text-amber-400 font-bold min-w-[45px]">S</th>
+                    <th class="p-3 text-center border-l border-slate-700 bg-rose-950 text-rose-400 font-bold min-w-[45px]">A</th>
                 </tr>
             `;
             tableHead.innerHTML = headHTML;
 
-            // 4. SUSUN BARIS MATRIX SISWA (Berderet Ke Bawah)
+            // 4. SUSUN BARIS DATA MATRIX SISWA
             tableBody.innerHTML = "";
             if (daftarSiswa.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 5}" class="p-8 text-center text-slate-400 text-xs">Tidak ada riwayat presensi pada periode ini.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada riwayat presensi pada periode ini.</td></tr>`;
                 return;
             }
 
             daftarSiswa.forEach((siswa, index) => {
-                let hitungH = 0, hitungI = 0, hitungA = 0;
+                let hitungH = 0, hitungD = 0, hitungI = 0, hitungS = 0, hitungA = 0;
 
-                // Bangun kolom-kolom status per tanggal
                 let kolomStatusHTML = daftarTanggal.map(tgl => {
-                    // Cari status siswa ini di tanggal tersebut
                     const cocok = dataDisaring.find(item => item.nama === siswa && item.tanggal === tgl);
-                    let status = cocok ? cocok.status.toUpperCase() : "-";
+                    let statusRaw = cocok ? cocok.status : "-";
+                    let statusSingkat = "-";
 
-                    // Koreksi kode status jika menggunakan format kata utuh
-                    if (status === "HADIR") status = "H";
-                    if (status === "IZIN" || status === "SAKIT") status = "I";
-                    if (status === "ALFA" || status === "TANPA KETERANGAN") status = "A";
+                    // Pemetaan dan pemisahan logika counter status secara mandiri
+                    if (statusRaw.toLowerCase() === "hadir") { statusSingkat = "H"; hitungH++; }
+                    else if (statusRaw.toLowerCase() === "dispen") { statusSingkat = "D"; hitungD++; }
+                    else if (statusRaw.toLowerCase() === "izin") { statusSingkat = "I"; hitungI++; }
+                    else if (statusRaw.toLowerCase() === "sakit") { statusSingkat = "S"; hitungS++; }
+                    else if (statusRaw.toLowerCase() === "alpa") { statusSingkat = "A"; hitungA++; }
 
-                    // Hitung kalkulasi rekapitulasi total di akhir baris
-                    if (status === "H") hitungH++;
-                    else if (status === "I" || status === "S") hitungI++;
-                    else if (status === "A") hitungA++;
-
-                    // Pewarnaan teks indikator huruf agar mudah dipantau guru
+                    // Styling warna inisial huruf di kolom tanggal
                     let warnaTeks = "text-slate-300";
-                    if (status === "H") warnaTeks = "text-emerald-600 font-bold";
-                    if (status === "I" || status === "S") warnaTeks = "text-amber-600 font-bold";
-                    if (status === "A") warnaTeks = "text-rose-600 font-bold";
+                    if (statusSingkat === "H") warnaTeks = "text-emerald-600 font-bold";
+                    if (statusSingkat === "D") warnaTeks = "text-sky-600 font-bold";
+                    if (statusSingkat === "I") warnaTeks = "text-indigo-600 font-bold";
+                    if (statusSingkat === "S") warnaTeks = "text-amber-600 font-bold";
+                    if (statusSingkat === "A") warnaTeks = "text-rose-600 font-bold";
 
-                    return `<td class="p-3 text-center border-l border-slate-100 ${warnaTeks}">${status}</td>`;
+                    return `<td class="p-3 text-center border-l border-slate-100 ${warnaTeks}">${statusSingkat}</td>`;
                 }).join('');
 
-                // Masukkan struktur baris siswa ke dalam tubuh tabel
                 let rowHTML = `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3 pl-5 text-center font-mono text-xs text-slate-400 bg-slate-100/50">${index + 1}</td>
+                        <td class="p-3 text-center font-mono text-xs text-slate-400 bg-slate-100/50">${index + 1}</td>
                         <td class="p-3 font-semibold text-slate-900 sticky-col border-r border-slate-200">${siswa}</td>
                         ${kolomStatusHTML}
                         <td class="p-3 text-center border-l border-slate-200 bg-emerald-50 text-emerald-800 font-bold">${hitungH}</td>
-                        <td class="p-3 text-center border-l border-slate-100 bg-amber-50 text-amber-800 font-bold">${hitungI}</td>
+                        <td class="p-3 text-center border-l border-slate-100 bg-sky-50 text-sky-800 font-bold">${hitungD}</td>
+                        <td class="p-3 text-center border-l border-slate-100 bg-indigo-50 text-indigo-800 font-bold">${hitungI}</td>
+                        <td class="p-3 text-center border-l border-slate-100 bg-amber-50 text-amber-800 font-bold">${hitungS}</td>
                         <td class="p-3 text-center border-l border-slate-100 bg-rose-50 text-rose-800 font-bold">${hitungA}</td>
                     </tr>
                 `;
