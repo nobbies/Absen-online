@@ -32,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Live Jurnal</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Jurnal Google Sheet</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -42,7 +42,7 @@
         
         <div class="text-center md:text-left border-b border-slate-200 pb-4">
             <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">JURNAL REKAPITULASI PRESENSI SISWA</h1>
-            <p id="sub-judul" class="text-sm text-slate-500 mt-1">Sinkronisasi database Google Sheet...</p>
+            <p id="sub-judul" class="text-sm text-slate-500 mt-1">Menghubungkan ke database Google Sheet...</p>
         </div>
 
         <div class="no-print bg-white rounded-xl shadow-xs border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -94,7 +94,7 @@
     </main>
 
     <script>
-        // Masukkan link publikasi web CSV milik Anda ke variabel di bawah ini
+        // Gunakan URL Publikasi Google Sheet Anda di sini
         const URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?output=csv";
 
         let DATA_LOG_ABSEN = [];
@@ -129,7 +129,19 @@
                 });
         }
 
-        // Fungsi Parser CSV Aman untuk menghindari bug dropdown berantakan
+        // Fungsi Parser CSV Standar Industri yang Menjamin Keamanan Kolom Teks ber-Spasi/Koma
+        function parseCSVLine(text) {
+            let p = false, r = [''], c = 0;
+            for (let i = 0; i < text.length; i++) {
+                let el = text[i], next = text[i+1];
+                if (el == '"') { if (p && next == '"') { r[c] += '"'; i++; } else { p = !p; } }
+                else if (el == ',' && !p) { r[++c] = ''; }
+                else if ((el == '\r' || el == '\n') && !p) { break; }
+                else { r[c] += el; }
+            }
+            return r;
+        }
+
         function prosesDataCSV(text) {
             DATA_LOG_ABSEN = [];
             const lines = text.split(/\r?\n/);
@@ -138,19 +150,19 @@
                 const line = lines[i].trim();
                 if (!line) continue;
 
-                // Memecah kolom dengan regex untuk menepis kendala tanda petik ganda
-                const columns = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                // Memakai Parser Aman
+                const columns = parseCSVLine(line);
                 
                 if (columns.length >= 5) {
-                    const tglWaktu = columns[0].replace(/^"|"$/g, '').trim(); 
+                    const tglWaktu = columns[0].trim(); 
                     const tglSaja = tglWaktu.split(' ')[0]; 
-                    const kelas = columns[1].replace(/^"|"$/g, '').trim();
-                    const mapel = columns[2].replace(/^"|"$/g, '').trim();
-                    const nama = columns[3].replace(/^"|"$/g, '').trim();
-                    const status = columns[4].replace(/^"|"$/g, '').trim();
+                    const kelas = columns[1].trim();
+                    const mapel = columns[2].trim();
+                    const nama = columns[3].trim();
+                    const status = columns[4].trim();
 
-                    // Abaikan baris header spreadsheet asli
-                    if (kelas.toLowerCase() === "kelas" || nama.toLowerCase() === "nama siswa" || tglWaktu.toLowerCase().includes("timestamp")) {
+                    // Mencegah baris header ikut terbaca masuk dropdown
+                    if (!kelas || !nama || kelas.toLowerCase() === "kelas" || nama.toLowerCase() === "nama siswa" || tglWaktu.toLowerCase().includes("timestamp")) {
                         continue;
                     }
 
@@ -165,7 +177,6 @@
             }
 
             if (DATA_LOG_ABSEN.length > 0) {
-                // Buka proteksi filter
                 [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
                     el.disabled = false;
                     el.classList.remove('bg-slate-100');
@@ -181,7 +192,6 @@
         }
 
         function setupDropdowns() {
-            // Mengambil daftar bernilai unik yang bersih tanpa duplikat
             const listKelas = [...new Set(DATA_LOG_ABSEN.map(item => item.kelas))].filter(Boolean).sort();
             const listMapel = [...new Set(DATA_LOG_ABSEN.map(item => item.mapel))].filter(Boolean).sort();
 
@@ -226,10 +236,11 @@
                        (!blnAkhir || blnItem <= blnAkhir);
             });
 
+            // Urutkan tanggal secara kronologis kalender
             const daftarTanggal = [...new Set(dataDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
             const daftarSiswa = [...new Set(dataDisaring.map(item => item.nama))].sort();
 
-            // HEADER TABEL REKAP MANDIRI
+            // HEADER TABEL DENGAN REKAP STATUS MANDIRI H, D, I, S, A
             let headHTML = `
                 <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <th class="p-3 text-center w-12 bg-slate-950">No</th>
@@ -250,7 +261,7 @@
 
             tableBody.innerHTML = "";
             if (daftarSiswa.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ditemukan riwayat presensi siswa.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ditemukan riwayat data presensi siswa untuk filter ini.</td></tr>`;
                 return;
             }
 
