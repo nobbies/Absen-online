@@ -32,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database & Log Absen</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database Verified</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -70,8 +70,11 @@
                 <input type="month" id="filter-bulan-akhir" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
             </div>
             
-            <div class="md:col-span-4 flex justify-end pt-2">
-                <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 px-5 rounded-lg text-sm shadow-xs flex items-center gap-2 transition">
+            <div class="md:col-span-4 flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
+                <button id="btn-tampilkan" disabled onclick="generateMatrixTable()" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow-xs transition cursor-pointer">
+                    🔍 Tampilkan Laporan
+                </button>
+                <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-5 rounded-lg text-sm shadow-xs flex items-center gap-2 transition">
                     🖨️ Cetak Jurnal (PDF)
                 </button>
             </div>
@@ -88,26 +91,29 @@
             <div id="filter-prompt" class="text-center py-12 bg-white">
                 <div id="prompt-icon" class="text-slate-300 text-5xl mb-2">⏳</div>
                 <h3 id="prompt-title" class="text-base font-bold text-slate-700">Menghubungkan ke Google Sheet...</h3>
-                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Sinkronisasi Database Struktur & Log Kehadiran.</p>
+                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Sinkronisasi Struktur Database Induk.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // MASUKKAN BASE URL SPREADSHEET UTAMA ANDA DI SINI
+        // URL Publikasi Utama Google Sheet
         const BASE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?output=csv";
         
-        // Parameter GID untuk masing-masing Lembar Kerja (Silakan ganti jika GID sheet Anda berbeda)
-        const URL_DATABASE = BASE_URL + "&gid=0"; // Sheet Database induk nama & kelas
-        const URL_LOG_ABSEN = BASE_URL + "&gid=1815124151"; // Sheet Log_Absen perekam absen harian
+        // Memisahkan penarikan data per Sheet berdasarkan GID masing-masing
+        const URL_DATABASE = BASE_URL + "&gid=0"; 
+        const URL_LOG_ABSEN = BASE_URL + "&gid=1815124151"; 
 
         let MASTER_DATABASE_SISWA = [];
+        let FILTER_LIST_KELAS = [];
+        let FILTER_LIST_MAPEL = [];
         let DATA_LOG_ABSEN = [];
 
         const filterKelas = document.getElementById('filter-kelas');
         const filterMapel = document.getElementById('filter-mapel');
         const filterBulanAwal = document.getElementById('filter-bulan-awal');
         const filterBulanAkhir = document.getElementById('filter-bulan-akhir');
+        const btnTampilkan = document.getElementById('btn-tampilkan');
         const tableHead = document.getElementById('table-head');
         const tableBody = document.getElementById('table-body');
         const filterPrompt = document.getElementById('filter-prompt');
@@ -118,11 +124,7 @@
 
         document.addEventListener("DOMContentLoaded", muatSeluruhData);
 
-        [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
-            el.addEventListener('change', generateMatrixTable);
-        });
-
-        // Parser CSV standar industri yang aman dari gangguan tanda petik ganda
+        // Parser CSV aman terhadap pembungkusan tanda kutip ganda ("")
         function parseCSVLine(text) {
             let p = false, r = [''], c = 0;
             for (let i = 0; i < text.length; i++) {
@@ -147,43 +149,55 @@
                 const textLog = await resLog.text();
                 prosesLogAbsen(textLog);
 
-                // Aktifkan Filter setelah kedua data siap
-                [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
+                // Aktifkan elemen kontrol input
+                [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir, btnTampilkan].forEach(el => {
                     el.disabled = false;
                     el.classList.remove('bg-slate-100');
                 });
 
                 setupDropdowns();
 
-                promptIcon.innerText = "📊";
-                promptTitle.innerText = "Database Siap & Sinkron!";
-                promptDesc.innerText = "Silakan tentukan Kelas dan Mata Pelajaran untuk menyusun jurnal presensi.";
-                subJudul.innerText = `Terhubung. Terbaca ${MASTER_DATABASE_SISWA.length} siswa dan ${DATA_LOG_ABSEN.length} log riwayat absen.`;
+                promptIcon.innerText = "🔍";
+                promptTitle.innerText = "Silakan Pilih Filter & Klik Tampilkan";
+                promptDesc.innerText = "Data telah disinkronkan. Tentukan kelas, mapel, periode bulan lalu tekan tombol Tampilkan Laporan.";
+                subJudul.innerText = `Terhubung ke Google Sheet. Memuat ${MASTER_DATABASE_SISWA.length} daftar siswa tetap.`;
 
             } catch (error) {
                 console.error(error);
                 promptIcon.innerText = "❌";
-                promptTitle.innerText = "Gagal Menghubungkan Google Sheet";
-                promptDesc.innerText = "Pastikan setelan berbagi/publikasi tautan web CSV di akun spreadsheet Anda sudah aktif.";
+                promptTitle.innerText = "Gagal Sinkronisasi";
+                promptDesc.innerText = "Pastikan setelan file Google Sheet Anda sudah dipublikasikan ke web.";
             }
         }
 
         function prosesDatabaseSiswa(text) {
             MASTER_DATABASE_SISWA = [];
+            FILTER_LIST_KELAS = [];
+            FILTER_LIST_MAPEL = [];
+            
             const lines = text.split(/\r?\n/);
-            for (let i = 1; i < lines.length; i++) { // Lewati baris indeks 0 (Header)
+            for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
+                
                 const columns = parseCSVLine(line);
                 if (columns.length >= 3) {
                     const idSiswa = columns[0].trim();
                     const nama = columns[1].trim();
-                    const kelas = columns[2].trim();
-                    // Kolom ke-5 (index 5) di database Anda adalah Mapel bawaan siswa
-                    const mapelBawaan = columns[5] ? columns[5].trim() : ""; 
+                    const kelasBawaan = columns[2].trim(); // Kolom C (Kelas siswa harian)
+                    
+                    // Sesuai Instruksi:
+                    const mapelPilihan = columns[5] ? columns[5].trim() : ""; // Kolom F (Index 5) -> Pilihan Mapel Utama
+                    const kelasPilihan = columns[6] ? columns[6].trim() : ""; // Kolom G (Index 6) -> Pilihan Daftar Kelas Utama
 
-                    if (nama && kelas && nama.toLowerCase() !== "nama") {
-                        MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelas, mapel: mapelBawaan });
+                    if (nama && nama.toLowerCase() !== "nama") {
+                        MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelasBawaan });
+                    }
+                    if (kelasPilihan && kelasPilihan.toLowerCase() !== "daftar kelas") {
+                        FILTER_LIST_KELAS.push(kelasPilihan);
+                    }
+                    if (mapelPilihan && mapelPilihan.toLowerCase() !== "mapel") {
+                        FILTER_LIST_MAPEL.push(mapelPilihan);
                     }
                 }
             }
@@ -195,6 +209,7 @@
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
+                
                 const columns = parseCSVLine(line);
                 if (columns.length >= 5) {
                     const tglWaktu = columns[0].trim();
@@ -212,19 +227,15 @@
         }
 
         function setupDropdowns() {
-            // Dropdown diambil 100% dari Master Database Sheet yang rapi tanpa terpengaruh log
-            const listKelas = [...new Set(MASTER_DATABASE_SISWA.map(item => item.kelas))].filter(Boolean).sort();
-            
-            // Mapel diambil gabungan dari Database maupun Log Absen agar variasi mapel terdeteksi menyeluruh
-            const listMapelDb = MASTER_DATABASE_SISWA.map(item => item.mapel);
-            const listMapelLog = DATA_LOG_ABSEN.map(item => item.mapel);
-            const listMapel = [...new Set([...listMapelDb, ...listMapelLog])].filter(Boolean).sort();
+            // Dropdown diisi secara presisi hanya dari array kolom F dan G Sheet Database
+            const listKelasBersih = [...new Set(FILTER_LIST_KELAS)].filter(Boolean).sort();
+            const listMapelBersih = [...new Set(FILTER_LIST_MAPEL)].filter(Boolean).sort();
 
             filterKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
             filterMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
 
-            listKelas.forEach(k => filterKelas.options.add(new Option(k, k)));
-            listMapel.forEach(m => filterMapel.options.add(new Option(m, m)));
+            listKelasBersih.forEach(k => filterKelas.options.add(new Option(k, k)));
+            listMapelBersih.forEach(m => filterMapel.options.add(new Option(m, m)));
         }
 
         function dapatkanFormatBulan(stringTanggal) {
@@ -244,19 +255,17 @@
             const blnAkhir = filterBulanAkhir.value;
 
             if (!kelasAktif || !mapelAktif) {
-                tableHead.innerHTML = "";
-                tableBody.innerHTML = "";
-                filterPrompt.classList.remove('hidden');
+                alert("Mohon tentukan Kelas dan Mata Pelajaran terlebih dahulu!");
                 return;
             }
 
             filterPrompt.classList.add('hidden');
             subJudul.innerText = `Kelas: ${kelasAktif} | Mata Pelajaran: ${mapelAktif}`;
 
-            // Ambil daftar nama urutan asli dari sheet MASTER DATABASE sesuai kelas pilihan
+            // 1. Kunci Daftar Siswa dan Urutan aslinya berdasarkan filter Kelas dari Sheet Database
             const daftarSiswaUrut = MASTER_DATABASE_SISWA.filter(s => s.kelas === kelasAktif);
 
-            // Saring log absen untuk membuat kolom tanggal harian
+            // 2. Saring Log Absensi berdasarkan Kelas, Mapel, dan Range Bulan Pilihan
             const logDisaring = DATA_LOG_ABSEN.filter(item => {
                 const blnItem = dapatkanFormatBulan(item.tanggal);
                 return item.kelas === kelasAktif &&
@@ -265,10 +274,10 @@
                        (!blnAkhir || blnItem <= blnAkhir);
             });
 
-            // Cari tanggal unik yang terdaftar pada log pertemuan tersebut
+            // Mendapatkan daftar tanggal pertemuan unik
             const daftarTanggal = [...new Set(logDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
 
-            // SUSUN KOLOM HEADER
+            // SUSUN KOLOM HEADER TABEL
             let headHTML = `
                 <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <th class="p-3 text-center w-12 bg-slate-950">No</th>
@@ -287,10 +296,10 @@
             `;
             tableHead.innerHTML = headHTML;
 
-            // SUSUN DATA SISWA SESUAI URUTAN ID DATABASE
+            // SUSUN BARIS DATA SISWA SESUAI DATABASE URUTAN ID
             tableBody.innerHTML = "";
             if (daftarSiswaUrut.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada data siswa ditemukan untuk kelas ini.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada data siswa ditemukan untuk Kelas ${kelasAktif} di database induk.</td></tr>`;
                 return;
             }
 
@@ -298,7 +307,7 @@
                 let hitungH = 0, hitungD = 0, hitungI = 0, hitungS = 0, hitungA = 0;
 
                 let kolomStatusHTML = daftarTanggal.map(tgl => {
-                    // Cari data kehadiran di log absen berdasarkan nama siswa dan tanggal pertemuan harian
+                    // Pencocokan log absen harian dengan nama siswa tetap database induk
                     const cocok = logDisaring.find(item => item.nama.toLowerCase() === siswa.nama.toLowerCase() && item.tanggal === tgl);
                     let statusRaw = cocok ? cocok.status.trim().toLowerCase() : "-";
                     let statusSingkat = "-";
