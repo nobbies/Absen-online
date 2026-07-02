@@ -32,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database Verified</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database & Log Verified</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -97,12 +97,15 @@
     </main>
 
     <script>
-        // URL Publikasi Utama Google Sheet
-        const BASE_URL = "https://script.google.com/macros/s/AKfycbyo2UpV5gX_c5JP9TWCYboJQpXDnJp_BIUafelk9cxf7OxdQfEbi2lxnKGlChyGpud5/exec";
-        
-        // Memisahkan penarikan data per Sheet berdasarkan GID masing-masing
-        const URL_DATABASE = BASE_URL + "&gid=0"; 
-        const URL_LOG_ABSEN = BASE_URL + "&gid=1815124151"; 
+        // =========================================================================
+        // PENTING: GANTI ID DI BAWAH INI DENGAN ID SPREADSHEET GOOGLE SHEET ANDA
+        // ID diambil dari link browser Anda (antara /d/ dan /edit)
+        // =========================================================================
+        const SPREADSHEET_ID = "1UzqWGBKjHNcnBSz3UexIktAF7JY5-E13qiAo5AIXo2o"; // Contoh ID Anda
+
+        // Metode Ekspor CSV Google resmi yang mendukung multi-sheet (multi-gid) secara aman
+        const URL_DATABASE = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0`; 
+        const URL_LOG_ABSEN = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=1815124151`; 
 
         let MASTER_DATABASE_SISWA = [];
         let FILTER_LIST_KELAS = [];
@@ -124,7 +127,6 @@
 
         document.addEventListener("DOMContentLoaded", muatSeluruhData);
 
-        // Parser CSV aman terhadap pembungkusan tanda kutip ganda ("")
         function parseCSVLine(text) {
             let p = false, r = [''], c = 0;
             for (let i = 0; i < text.length; i++) {
@@ -139,17 +141,19 @@
 
         async function muatSeluruhData() {
             try {
-                // 1. Ambil data Sheet Database
+                // 1. Unduh data Sheet Database
                 const resDb = await fetch(URL_DATABASE);
+                if (!resDb.ok) throw new Error("Gagal mengambil Database");
                 const textDb = await resDb.text();
                 prosesDatabaseSiswa(textDb);
 
-                // 2. Ambil data Sheet Log_Absen
+                // 2. Unduh data Sheet Log_Absen
                 const resLog = await fetch(URL_LOG_ABSEN);
+                if (!resLog.ok) throw new Error("Gagal mengambil Log Absen");
                 const textLog = await resLog.text();
                 prosesLogAbsen(textLog);
 
-                // Aktifkan elemen kontrol input
+                // Aktifkan Kontrol Fitur
                 [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir, btnTampilkan].forEach(el => {
                     el.disabled = false;
                     el.classList.remove('bg-slate-100');
@@ -159,14 +163,14 @@
 
                 promptIcon.innerText = "🔍";
                 promptTitle.innerText = "Silakan Pilih Filter & Klik Tampilkan";
-                promptDesc.innerText = "Data telah disinkronkan. Tentukan kelas, mapel, periode bulan lalu tekan tombol Tampilkan Laporan.";
-                subJudul.innerText = `Terhubung ke Google Sheet. Memuat ${MASTER_DATABASE_SISWA.length} daftar siswa tetap.`;
+                promptDesc.innerText = "Database sukses disinkronkan. Tentukan kelas dan mapel lalu tekan tombol Tampilkan Laporan.";
+                subJudul.innerText = `Terhubung ke Google Sheet. Memuat ${MASTER_DATABASE_SISWA.length} daftar nama tetap siswa.`;
 
             } catch (error) {
                 console.error(error);
                 promptIcon.innerText = "❌";
-                promptTitle.innerText = "Gagal Sinkronisasi";
-                promptDesc.innerText = "Pastikan setelan file Google Sheet Anda sudah dipublikasikan ke web.";
+                promptTitle.innerText = "Gagal Sinkronisasi Multi-Sheet";
+                promptDesc.innerText = "Pastikan setelan berbagi link Google Sheet Anda diubah menjadi 'Siapa saja yang memiliki link dapat melihat'.";
             }
         }
 
@@ -184,11 +188,10 @@
                 if (columns.length >= 3) {
                     const idSiswa = columns[0].trim();
                     const nama = columns[1].trim();
-                    const kelasBawaan = columns[2].trim(); // Kolom C (Kelas siswa harian)
+                    const kelasBawaan = columns[2].trim(); // Kolom C (Kelas masing-masing siswa)
                     
-                    // Sesuai Instruksi:
-                    const mapelPilihan = columns[5] ? columns[5].trim() : ""; // Kolom F (Index 5) -> Pilihan Mapel Utama
-                    const kelasPilihan = columns[6] ? columns[6].trim() : ""; // Kolom G (Index 6) -> Pilihan Daftar Kelas Utama
+                    const mapelPilihan = columns[5] ? columns[5].trim() : ""; // Kolom F -> Dropdown Mapel Utama
+                    const kelasPilihan = columns[6] ? columns[6].trim() : ""; // Kolom G -> Dropdown Kelas Utama
 
                     if (nama && nama.toLowerCase() !== "nama") {
                         MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelasBawaan });
@@ -227,7 +230,7 @@
         }
 
         function setupDropdowns() {
-            // Dropdown diisi secara presisi hanya dari array kolom F dan G Sheet Database
+            // Dropdown diambil akurat murni dari array kolom F dan G Sheet Database
             const listKelasBersih = [...new Set(FILTER_LIST_KELAS)].filter(Boolean).sort();
             const listMapelBersih = [...new Set(FILTER_LIST_MAPEL)].filter(Boolean).sort();
 
@@ -262,10 +265,10 @@
             filterPrompt.classList.add('hidden');
             subJudul.innerText = `Kelas: ${kelasAktif} | Mata Pelajaran: ${mapelAktif}`;
 
-            // 1. Kunci Daftar Siswa dan Urutan aslinya berdasarkan filter Kelas dari Sheet Database
+            // 1. Kunci Daftar Urutan Siswa berdasarkan filter Kelas dari Sheet Database induk
             const daftarSiswaUrut = MASTER_DATABASE_SISWA.filter(s => s.kelas === kelasAktif);
 
-            // 2. Saring Log Absensi berdasarkan Kelas, Mapel, dan Range Bulan Pilihan
+            // 2. Saring Log Absensi berdasarkan filter
             const logDisaring = DATA_LOG_ABSEN.filter(item => {
                 const blnItem = dapatkanFormatBulan(item.tanggal);
                 return item.kelas === kelasAktif &&
@@ -274,10 +277,9 @@
                        (!blnAkhir || blnItem <= blnAkhir);
             });
 
-            // Mendapatkan daftar tanggal pertemuan unik
             const daftarTanggal = [...new Set(logDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
 
-            // SUSUN KOLOM HEADER TABEL
+            // HEADER TABEL
             let headHTML = `
                 <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <th class="p-3 text-center w-12 bg-slate-950">No</th>
@@ -296,7 +298,6 @@
             `;
             tableHead.innerHTML = headHTML;
 
-            // SUSUN BARIS DATA SISWA SESUAI DATABASE URUTAN ID
             tableBody.innerHTML = "";
             if (daftarSiswaUrut.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada data siswa ditemukan untuk Kelas ${kelasAktif} di database induk.</td></tr>`;
@@ -307,7 +308,6 @@
                 let hitungH = 0, hitungD = 0, hitungI = 0, hitungS = 0, hitungA = 0;
 
                 let kolomStatusHTML = daftarTanggal.map(tgl => {
-                    // Pencocokan log absen harian dengan nama siswa tetap database induk
                     const cocok = logDisaring.find(item => item.nama.toLowerCase() === siswa.nama.toLowerCase() && item.tanggal === tgl);
                     let statusRaw = cocok ? cocok.status.trim().toLowerCase() : "-";
                     let statusSingkat = "-";
