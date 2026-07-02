@@ -12,7 +12,6 @@
             .print-card { box-shadow: none !important; border: none !important; }
             table { font-size: 11px; }
         }
-        /* Mengunci kolom nama agar tetap terlihat saat di-scroll ke samping */
         .sticky-col {
             position: -webkit-sticky;
             position: sticky;
@@ -33,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Format Jurnal Guru</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Format Jurnal Jurnal</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -42,31 +41,41 @@
     <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         
         <div class="text-center md:text-left border-b border-slate-200 pb-4">
-            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">JURNAL REKAPITULASI PRESENSI SISWA DETIL</h1>
-            <p id="sub-judul" class="text-sm text-slate-500 mt-1">Silakan tentukan filter Kelas & Mapel terlebih dahulu.</p>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">JURNAL REKAPITULASI PRESENSI SISWA</h1>
+            <p id="sub-judul" class="text-sm text-slate-500 mt-1">Silakan unggah file log absen terlebih dahulu.</p>
+        </div>
+
+        <div class="no-print bg-blue-50 border border-blue-200 rounded-xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <h3 class="text-sm font-bold text-blue-900">Step 1: Masukkan Database Absensi</h3>
+                <p class="text-xs text-blue-700 mt-0.5">Pilih file <code class="bg-blue-100 px-1 rounded font-mono">absensi - Log_Absen.csv</code> yang diunduh dari Google Sheets.</p>
+            </div>
+            <input type="file" id="csv-file" accept=".csv" class="block w-full md:w-auto text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white file:cursor-pointer hover:file:bg-blue-700 transition" />
         </div>
 
         <div class="no-print bg-white rounded-xl shadow-xs border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas *</label>
-                <select id="filter-kelas" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                    </select>
+                <select id="filter-kelas" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition disabled:opacity-50">
+                    <option value="">-- Menunggu File CSV --</option>
+                </select>
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Mapel *</label>
-                <select id="filter-mapel" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                    </select>
+                <select id="filter-mapel" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition disabled:opacity-50">
+                    <option value="">-- Menunggu File CSV --</option>
+                </select>
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Mulai Bulan</label>
-                <input type="month" id="filter-bulan-awal" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                <input type="month" id="filter-bulan-awal" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition disabled:opacity-50">
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Sampai Bulan</label>
-                <input type="month" id="filter-bulan-akhir" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                <input type="month" id="filter-bulan-akhir" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition disabled:opacity-50">
             </div>
             
             <div class="md:col-span-4 flex justify-end pt-2">
@@ -79,42 +88,24 @@
         <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden print-card">
             <div class="overflow-x-auto max-w-full">
                 <table class="w-full text-left border-collapse min-w-max">
-                    <thead id="table-head">
-                        </thead>
-                    <tbody id="table-body" class="divide-y divide-slate-200 text-sm text-slate-700">
-                        </tbody>
+                    <thead id="table-head"></thead>
+                    <tbody id="table-body" class="divide-y divide-slate-200 text-sm text-slate-700"></tbody>
                 </table>
             </div>
 
             <div id="filter-prompt" class="text-center py-12 bg-white">
                 <div class="text-slate-300 text-5xl mb-2">📋</div>
-                <h3 class="text-base font-bold text-slate-700">Pilih Kelas dan Mata Pelajaran</h3>
-                <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Silakan tentukan kombinasi kelas dan mata pelajaran untuk memuat lembar absensi siswa.</p>
+                <h3 id="prompt-title" class="text-base font-bold text-slate-700">Silahkan Unggah File CSV Terlebih Dahulu</h3>
+                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Sistem membutuhkan file Log_Absen.csv Anda untuk membaca daftar nama, kelas, dan mapel secara utuh.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // DATA LOG ABSENSI (Sesuai struktur data dari file absensi - Log_Absen.csv Anda)
-        // Format Tanggal disesuaikan agar dibaca otomatis (Format asal: M/D/YYYY atau YYYY-MM-DD)
-        const DATA_LOG_ABSEN = [
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "ALLUNA MAURENTS SONIADEWI", status: "Hadir" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "HASAN ALFATAH", status: "Dispen" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DANA DIVA PUTRA SINAWA", status: "Sakit" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DIMAS SUDANTA", status: "Izin" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE SAKKA SUGYANTARA", status: "Alpa" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I KOMANG ADI WIJAYA KUSUMA", status: "Hadir" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I MADE BAYU KURNIA DANISWARA", status: "Dispen" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I MADE DEVTA INDRAWAN PUTRA", status: "Sakit" },
-            { tanggal: "7/1/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I MADE YUDA PRAMANA", status: "Izin" },
-            
-            // Log pertemuan kedua (Contoh tanggal fiktif berikutnya)
-            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "ALLUNA MAURENTS SONIADEWI", status: "Hadir" },
-            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "HASAN ALFATAH", status: "Hadir" },
-            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DANA DIVA PUTRA SINAWA", status: "Hadir" },
-            { tanggal: "7/8/2026", kelas: "11 TKJ 1", mapel: "KKA", nama: "I GEDE DIMAS SUDANTA", status: "Alpa" }
-        ];
+        // Array global penampung data hasil ekstraksi CSV
+        let DATA_LOG_ABSEN = [];
 
+        const fileInput = document.getElementById('csv-file');
         const filterKelas = document.getElementById('filter-kelas');
         const filterMapel = document.getElementById('filter-mapel');
         const filterBulanAwal = document.getElementById('filter-bulan-awal');
@@ -122,14 +113,79 @@
         const tableHead = document.getElementById('table-head');
         const tableBody = document.getElementById('table-body');
         const filterPrompt = document.getElementById('filter-prompt');
+        const promptTitle = document.getElementById('prompt-title');
+        const promptDesc = document.getElementById('prompt-desc');
         const subJudul = document.getElementById('sub-judul');
 
-        document.addEventListener("DOMContentLoaded", () => {
-            setupDropdowns();
-            [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
-                el.addEventListener('change', generateMatrixTable);
-            });
+        // Listener unggah file CSV
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Pasang event listener ke kontrol filter
+        [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
+            el.addEventListener('change', generateMatrixTable);
         });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                prosesDataCSV(text);
+            };
+            reader.readAsText(file);
+        }
+
+        // Fungsi pemecah struktur baris teks CSV menjadi Objek Data Javascript
+        function prosesDataCSV(text) {
+            DATA_LOG_ABSEN = [];
+            // Deteksi baris
+            const lines = text.split(/\r?\n/);
+            
+            for (let i = 0; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                // Pisahkan kolom menggunakan koma
+                const columns = lines[i].split(',');
+                
+                if (columns.length >= 5) {
+                    const tglWaktu = columns[0].replace(/"/g, '').trim(); // "7/1/2026 19:32:37"
+                    const tglSaja = tglWaktu.split(' ')[0]; // Ambil bagian tanggal saja "7/1/2026"
+                    const kelas = columns[1].replace(/"/g, '').trim();
+                    const mapel = columns[2].replace(/"/g, '').trim();
+                    const nama = columns[3].replace(/"/g, '').trim();
+                    const status = columns[4].replace(/"/g, '').trim();
+
+                    // Lewati baris header jika terbaca
+                    if (kelas.toLowerCase() === "kelas" || nama.toLowerCase() === "nama siswa") continue;
+
+                    DATA_LOG_ABSEN.push({
+                        tanggal: tglSaja,
+                        kelas: kelas,
+                        mapel: mapel,
+                        nama: nama,
+                        status: status
+                    });
+                }
+            }
+
+            if (DATA_LOG_ABSEN.length > 0) {
+                // Aktifkan Form Filter
+                [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
+                    el.disabled = false;
+                    el.classList.remove('bg-slate-100');
+                });
+                
+                setupDropdowns();
+                
+                promptTitle.innerText = "File Berhasil Dimuat!";
+                promptDesc.innerText = "Silakan tentukan pilihan Kelas dan Mata Pelajaran di atas untuk menampilkan matriks jurnal.";
+                subJudul.innerText = `Berhasil membaca ${DATA_LOG_ABSEN.length} baris log data absensi.`;
+            } else {
+                alert("Format file CSV tidak sesuai atau data kosong.");
+            }
+        }
 
         function setupDropdowns() {
             const listKelas = [...new Set(DATA_LOG_ABSEN.map(item => item.kelas))].sort();
@@ -142,7 +198,6 @@
             listMapel.forEach(m => filterMapel.options.add(new Option(m, m)));
         }
 
-        // Fungsi pembantu untuk mengubah tanggal format "M/D/YYYY" ke string pembanding "YYYY-MM"
         function dapatkanFormatBulan(stringTanggal) {
             const bagian = stringTanggal.split('/');
             if(bagian.length === 3) {
@@ -150,7 +205,7 @@
                 const bulan = bagian[0].padStart(2, '0');
                 return `${tahun}-${bulan}`;
             }
-            return stringTanggal.substring(0, 7); // Jika fallback memakai YYYY-MM-DD
+            return stringTanggal.substring(0, 7);
         }
 
         function generateMatrixTable() {
@@ -163,14 +218,13 @@
                 tableHead.innerHTML = "";
                 tableBody.innerHTML = "";
                 filterPrompt.classList.remove('hidden');
-                subJudul.innerText = "Silakan tentukan filter Kelas & Mapel terlebih dahulu.";
                 return;
             }
 
             filterPrompt.classList.add('hidden');
             subJudul.innerText = `Kelas: ${kelasAktif} | Mata Pelajaran: ${mapelAktif}`;
 
-            // 1. Saring data berdasarkan filter input guru
+            // Saring Log Absensi
             const dataDisaring = DATA_LOG_ABSEN.filter(item => {
                 const blnItem = dapatkanFormatBulan(item.tanggal);
                 return item.kelas === kelasAktif &&
@@ -179,18 +233,18 @@
                        (!blnAkhir || blnItem <= blnAkhir);
             });
 
-            // 2. Kumpulkan daftar tanggal unik & daftar nama siswa unik secara berurutan
+            // Urutkan Tanggal secara Kronologis & Nama secara Alfabetis
             const daftarTanggal = [...new Set(dataDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
             const daftarSiswa = [...new Set(dataDisaring.map(item => item.nama))].sort();
 
-            // 3. SUSUN KOLOM HEADER TABEL (Dipisahkan Mandiri)
+            // HEADER TABEL
             let headHTML = `
                 <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <th class="p-3 text-center w-12 bg-slate-950">No</th>
-                    <th class="p-3 sticky-col min-w-[220px] bg-slate-950 text-left">Nama Lengkap Siswa</th>
+                    <th class="p-3 sticky-col min-w-[240px] bg-slate-950 text-left">Nama Lengkap Siswa</th>
                     ${daftarTanggal.map(tgl => {
-                        const bagian = tgl.split('/');
-                        const tglDisplay = bagian.length === 3 ? `${bagian[1]}/${bagian[0]}` : tgl; // format d/m
+                        const b = tgl.split('/');
+                        const tglDisplay = b.length === 3 ? `${b[1]}/${b[0]}` : tgl;
                         return `<th class="p-3 text-center min-w-[65px] border-l border-slate-800">${tglDisplay}</th>`;
                     }).join('')}
                     <th class="p-3 text-center border-l border-slate-800 bg-emerald-950 text-emerald-400 font-bold min-w-[45px]">H</th>
@@ -202,10 +256,10 @@
             `;
             tableHead.innerHTML = headHTML;
 
-            // 4. SUSUN BARIS DATA MATRIX SISWA
+            // ISIAN NAMA DAN MATRIKS STATUS KETERANGAN
             tableBody.innerHTML = "";
             if (daftarSiswa.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada riwayat presensi pada periode ini.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ditemukan riwayat data presensi untuk kombinasi filter ini.</td></tr>`;
                 return;
             }
 
@@ -214,17 +268,15 @@
 
                 let kolomStatusHTML = daftarTanggal.map(tgl => {
                     const cocok = dataDisaring.find(item => item.nama === siswa && item.tanggal === tgl);
-                    let statusRaw = cocok ? cocok.status : "-";
+                    let statusRaw = cocok ? cocok.status.trim().toLowerCase() : "-";
                     let statusSingkat = "-";
 
-                    // Pemetaan dan pemisahan logika counter status secara mandiri
-                    if (statusRaw.toLowerCase() === "hadir") { statusSingkat = "H"; hitungH++; }
-                    else if (statusRaw.toLowerCase() === "dispen") { statusSingkat = "D"; hitungD++; }
-                    else if (statusRaw.toLowerCase() === "izin") { statusSingkat = "I"; hitungI++; }
-                    else if (statusRaw.toLowerCase() === "sakit") { statusSingkat = "S"; hitungS++; }
-                    else if (statusRaw.toLowerCase() === "alpa") { statusSingkat = "A"; hitungA++; }
+                    if (statusRaw === "hadir") { statusSingkat = "H"; hitungH++; }
+                    else if (statusRaw === "dispen" || statusRaw === "dispensasi") { statusSingkat = "D"; hitungD++; }
+                    else if (statusRaw === "izin" || statusRaw === "ijin") { statusSingkat = "I"; hitungI++; }
+                    else if (statusRaw === "sakit") { statusSingkat = "S"; hitungS++; }
+                    else if (statusRaw === "alpa" || statusRaw === "alpha") { statusSingkat = "A"; hitungA++; }
 
-                    // Styling warna inisial huruf di kolom tanggal
                     let warnaTeks = "text-slate-300";
                     if (statusSingkat === "H") warnaTeks = "text-emerald-600 font-bold";
                     if (statusSingkat === "D") warnaTeks = "text-sky-600 font-bold";
