@@ -1,157 +1,245 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laporan Presensi Siswa</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Hasil Absensi - SmartAbsen Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @media print {
+            body { background: white; color: black; }
+            .no-print { display: none !important; }
+            .print-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans p-6">
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen">
 
-  <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2 text-center">Laporan Daftar Hadir Siswa</h2>
-    
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kelas</label>
-        <select id="kelas" class="w-full p-2 border rounded-md bg-white">
-          <option value="">Memuat...</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mapel</label>
-        <select id="mapel" class="w-full p-2 border rounded-md bg-white">
-          <option value="">Memuat...</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Bulan Awal</label>
-        <input type="month" id="startMonth" class="w-full p-2 border rounded-md bg-white">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Bulan Akhir</label>
-        <input type="month" id="endMonth" class="w-full p-2 border rounded-md bg-white">
-      </div>
-    </div>
+    <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-xs">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Laporan Publik</span>
+            </div>
+            <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 flex items-center gap-1 transition">
+                ← Kembali ke Absen
+            </a>
+        </div>
+    </header>
 
-    <div class="text-right mb-6">
-      <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow transition cursor-pointer">
-        Tampilkan Laporan
-      </button>
-    </div>
+    <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+        
+        <div class="text-center md:text-left border-b border-slate-200 pb-4">
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">REKAPITULASI LAPORAN ABSENSI</h1>
+            <p class="text-sm text-slate-500 mt-1">Sistem Informasi Monitoring Kehadiran Siswa/Pegawai</p>
+        </div>
 
-    <div id="loading" class="hidden text-center text-gray-600 font-medium my-4 animate-pulse">Sedang mengambil data dari Google Sheets...</div>
-    
-    <div class="overflow-x-auto">
-      <table class="min-w-full table-auto bg-white rounded-lg overflow-hidden hidden shadow" id="reportTable">
-        <thead class="bg-blue-600 text-white text-sm uppercase">
-          <tr>
-            <th class="py-3 px-4 text-center w-12">No</th>
-            <th class="py-3 px-4 text-left">Nama Siswa</th>
-            <th class="py-3 px-4 text-center bg-green-700 w-20">Hadir</th>
-            <th class="py-3 px-4 text-center bg-yellow-600 w-20">Sakit</th>
-            <th class="py-3 px-4 text-center bg-blue-700 w-20">Izin</th>
-            <th class="py-3 px-4 text-center bg-red-600 w-20">Alpa</th>
-            <th class="py-3 px-4 text-center bg-purple-700 w-20">Dispen</th>
-          </tr>
-        </thead>
-        <tbody id="reportContainer" class="text-gray-700 text-sm divide-y divide-gray-200"></tbody>
-      </table>
-      <div id="noData" class="text-center text-gray-500 italic mt-4 hidden">Tidak ada data rekapitulasi yang cocok.</div>
-    </div>
-  </div>
+        <div class="no-print bg-white rounded-xl shadow-xs border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4 print-card">
+            
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas</label>
+                <select id="filter-kelas" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    <option value="">-- Semua Kelas --</option>
+                    </select>
+            </div>
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyo2UpV5gX_c5JP9TWCYboJQpXDnJp_BIUafelk9cxf7OxdQfEbi2lxnKGlChyGpud5/exec";
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Mata Pelajaran / Kegiatan</label>
+                <select id="filter-mapel" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    <option value="">-- Semua Mapel --</option>
+                    </select>
+            </div>
 
-    window.onload = function() {
-      const now = new Date();
-      const currentMonth = now.toISOString().slice(0, 7);
-      document.getElementById('startMonth').value = currentMonth;
-      document.getElementById('endMonth').value = currentMonth;
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bulan Awal</label>
+                <input type="month" id="filter-bulan-awal" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            </div>
 
-      // Ambil dropdown filter lewat JSONP agar tidak kena CORS
-      fetchJSONP(`${WEB_APP_URL}?action=getFilters`, populateFilters);
-    };
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bulan Akhir</label>
+                <input type="month" id="filter-bulan-akhir" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            </div>
+            
+            <div class="md:col-span-4 flex justify-end space-x-3 border-t border-slate-100 pt-3 mt-1">
+                <button onclick="resetFilter()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
+                    Reset Filter
+                </button>
+                <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 px-5 rounded-lg text-sm shadow-xs flex items-center gap-2 transition">
+                    🖨️ Cetak Laporan
+                </button>
+            </div>
+        </div>
 
-    // Fungsi Utama Penanganan CORS Lintas Domain
-    function fetchJSONP(url, callbackFunc) {
-      const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-      window[callbackName] = function(data) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        callbackFunc(data);
-      };
-      
-      const script = document.createElement('script');
-      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-      document.body.appendChild(script);
-    }
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total Log</div>
+                <div id="stat-total" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-2xs">
+                <div class="text-xs font-bold text-emerald-600 uppercase tracking-wide">Hadir</div>
+                <div id="stat-hadir" class="text-2xl font-bold text-emerald-700 mt-1">0</div>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-2xs">
+                <div class="text-xs font-bold text-amber-600 uppercase tracking-wide">Izin/Sakit</div>
+                <div id="stat-izin" class="text-2xl font-bold text-amber-700 mt-1">0</div>
+            </div>
+            <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 shadow-2xs">
+                <div class="text-xs font-bold text-rose-600 uppercase tracking-wide">Alfa/Tanpa Ket.</div>
+                <div id="stat-alfa" class="text-2xl font-bold text-rose-700 mt-1">0</div>
+            </div>
+        </div>
 
-    function populateFilters(options) {
-      if(options.error) { 
-        alert("Gagal memuat database filter: " + options.error); 
-        return; 
-      }
-      const kelasSelect = document.getElementById('kelas');
-      const mapelSelect = document.getElementById('mapel');
-      
-      kelasSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
-      mapelSelect.innerHTML = '<option value="">-- Pilih Mapel --</option>';
-      
-      options.kelas.forEach(k => { kelasSelect.innerHTML += `<option value="${k}">${k}</option>`; });
-      options.mapel.forEach(m => { mapelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
-    }
+        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden print-card">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900 text-white text-xs font-bold tracking-wider uppercase border-b border-slate-200">
+                            <th class="p-3.5 pl-5">No</th>
+                            <th class="p-3.5">Tanggal / Waktu</th>
+                            <th class="p-3.5">Nama Lengkap</th>
+                            <th class="p-3.5">Kelas</th>
+                            <th class="p-3.5">Mata Pelajaran</th>
+                            <th class="p-3.5 pr-5">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-200 text-sm font-medium text-slate-700">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div id="no-data-alert" class="hidden text-center py-12 bg-white">
+                <div class="text-slate-300 text-5xl mb-2">🔍</div>
+                <h3 class="text-base font-bold text-slate-700">Data Tidak Ditemukan</h3>
+                <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Silakan sesuaikan pengaturan kombinasi kelas, mapel, atau rentang periode bulan Anda.</p>
+            </div>
+        </div>
+    </main>
 
-    function loadReport() {
-      const kelasRaw = document.getElementById('kelas').value;
-      const mapelRaw = document.getElementById('mapel').value;
-      const startMonth = document.getElementById('startMonth').value;
-      const endMonth = document.getElementById('endMonth').value;
+    <script>
+        // 1. DATA MASTER DARI LOG_ABSEN (Silakan ganti isi array di bawah ini dengan konversi data .csv Anda)
+        // Format Tanggal disarankan: YYYY-MM-DD atau YYYY-MM-DD HH:MM
+        const DATA_LOG_ABSEN = [
+            { tanggal: "2026-06-15 07:30", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "Hadir" },
+            { tanggal: "2026-06-15 07:32", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "Hadir" },
+            { tanggal: "2026-06-16 08:00", nama: "I Ketut Wijaya", kelas: "XII TKJ 2", mapel: "Jaringan Dasar", status: "Izin" },
+            { tanggal: "2026-07-01 07:45", nama: "I Gede Ananda", kelas: "XI RPL 1", mapel: "Basis Data", status: "Hadir" },
+            { tanggal: "2026-07-02 09:15", nama: "Wayan Subagia", kelas: "XII TKJ 2", mapel: "Jaringan Dasar", status: "Alfa" }
+        ];
 
-      if (!kelasRaw || !mapelRaw || !startMonth || !endMonth) {
-        alert("Harap tentukan semua kriteria filter terlebih dahulu!"); 
-        return;
-      }
+        // Inisialisasi Element DOM
+        const filterKelas = document.getElementById('filter-kelas');
+        const filterMapel = document.getElementById('filter-mapel');
+        const filterBulanAwal = document.getElementById('filter-bulan-awal');
+        const filterBulanAkhir = document.getElementById('filter-bulan-akhir');
+        const tableBody = document.getElementById('table-body');
+        const noDataAlert = document.getElementById('no-data-alert');
 
-      const kelas = encodeURIComponent(kelasRaw);
-      const mapel = encodeURIComponent(mapelRaw);
+        // Pemuatan Awal Aplikasi
+        document.addEventListener("DOMContentLoaded", () => {
+            setupFilterOptions();
+            renderTableData(DATA_LOG_ABSEN);
 
-      document.getElementById('loading').classList.remove('hidden');
-      document.getElementById('reportTable').classList.add('hidden');
-      document.getElementById('noData').classList.add('hidden');
+            // Pasang event listener ke setiap elemen filter
+            [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(element => {
+                element.addEventListener('change', jalankanFilter);
+            });
+        });
 
-      const url = `${WEB_APP_URL}?action=getReport&kelas=${kelas}&mapel=${mapel}&startMonth=${startMonth}&endMonth=${endMonth}`;
-      fetchJSONP(url, displayReport);
-    }
+        // Membuat daftar pilihan filter Kelas dan Mapel secara otomatis berdasarkan ketersediaan data unik
+        function setupFilterOptions() {
+            const listKelas = [...new Set(DATA_LOG_ABSEN.map(item => item.kelas))].sort();
+            const listMapel = [...new Set(DATA_LOG_ABSEN.map(item => item.mapel))].sort();
 
-    function displayReport(reportData) {
-      document.getElementById('loading').classList.add('hidden');
-      if(reportData.error) { alert("Error dari database: " + reportData.error); return; }
-      
-      const container = document.getElementById('reportContainer');
-      container.innerHTML = "";
+            listKelas.forEach(kelas => {
+                filterKelas.options.add(new Option(kelas, kelas));
+            });
+            listMapel.forEach(mapel => {
+                filterMapel.options.add(new Option(mapel, mapel));
+            });
+        }
 
-      if (reportData.length === 0) {
-        document.getElementById('noData').classList.remove('hidden'); 
-        return;
-      }
+        // Fungsi Render Mengisi Data Ke Tabel Utama beserta perhitungannya
+        function renderTableData(data) {
+            tableBody.innerHTML = "";
+            
+            if (data.length === 0) {
+                noDataAlert.classList.remove('hidden');
+                updateStatistik(0, 0, 0, 0);
+                return;
+            }
+            noDataAlert.classList.add('hidden');
 
-      reportData.forEach((row, index) => {
-        container.innerHTML += `
-          <tr class="hover:bg-gray-50 transition">
-            <td class="py-3 px-4 text-center">${index + 1}</td>
-            <td class="py-3 px-4 font-semibold text-gray-900">${row.nama}</td>
-            <td class="py-3 px-4 text-center font-bold text-green-600 bg-green-50">${row.hadir}</td>
-            <td class="py-3 px-4 text-center font-bold text-yellow-600 bg-yellow-50">${row.sakit}</td>
-            <td class="py-3 px-4 text-center font-bold text-blue-600 bg-blue-50">${row.izin}</td>
-            <td class="py-3 px-4 text-center font-bold text-red-600 bg-red-50">${row.alpa}</td>
-            <td class="py-3 px-4 text-center font-bold text-purple-600 bg-purple-50">${row.dispen}</td>
-          </tr>`;
-      });
-      
-      document.getElementById('reportTable').classList.remove('hidden');
-    }
-  </script>
+            let countHadir = 0, countIzin = 0, countAlfa = 0;
+
+            data.forEach((item, index) => {
+                // Hitung Statistik Kehadiran
+                const st = item.status.toLowerCase();
+                if (st === 'hadir' || st === 'h') countHadir++;
+                else if (st === 'izin' || st === 'sakit' || st === 'i' || st === 's') countIzin++;
+                else countAlfa++;
+
+                // Set warna badge status keterangan
+                let badgeClass = "bg-slate-100 text-slate-700";
+                if (st === 'hadir' || st === 'h') badgeClass = "bg-emerald-100 text-emerald-800";
+                else if (st === 'izin' || st === 'sakit' || st === 'i' || st === 's') badgeClass = "bg-amber-100 text-amber-800";
+                else if (st === 'alfa' || st === 'a') badgeClass = "bg-rose-100 text-rose-800";
+
+                const row = `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3.5 pl-5 text-slate-400 font-mono text-xs">${index + 1}</td>
+                        <td class="p-3.5 whitespace-nowrap font-mono text-xs text-slate-500">${item.tanggal}</td>
+                        <td class="p-3.5 text-slate-900 font-semibold">${item.nama}</td>
+                        <td class="p-3.5 text-slate-600">${item.kelas}</td>
+                        <td class="p-3.5 text-slate-600">${item.mapel}</td>
+                        <td class="p-3.5 pr-5">
+                            <span class="px-2.5 py-1 text-xs font-bold rounded-md ${badgeClass}">${item.status}</span>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            updateStatistik(data.length, countHadir, countIzin, countAlfa);
+        }
+
+        // Update Text Counter di Dashboard atas secara dinamis
+        function updateStatistik(total, hadir, izin, alfa) {
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-hadir').innerText = hadir;
+            document.getElementById('stat-izin').innerText = izin;
+            document.getElementById('stat-alfa').innerText = alfa;
+        }
+
+        // Algoritma Pemfilteran Utama Berkecepatan Tinggi (Flash Mode)
+        function jalankanFilter() {
+            const valKelas = filterKelas.value;
+            const valMapel = filterMapel.value;
+            const valAwal = filterBulanAwal.value; // Format: YYYY-MM
+            const valAkhir = filterBulanAkhir.value; // Format: YYYY-MM
+
+            const hasilFilter = DATA_LOG_ABSEN.filter(item => {
+                // Ambil string Tahun-Bulan saja dari properti tanggal log absensi (index 0 hingga 7)
+                const bulanItem = item.tanggal.substring(0, 7); 
+
+                const cocokKelas = !valKelas || item.kelas === valKelas;
+                const cocokMapel = !valMapel || item.mapel === valMapel;
+                const cocokAwal = !valAwal || bulanItem >= valAwal;
+                const cocokAkhir = !valAkhir || bulanItem <= valAkhir;
+
+                return cocokKelas && cocokMapel && cocokAwal && cocokAkhir;
+            });
+
+            renderTableData(hasilFilter);
+        }
+
+        // Fungsi Tombol Reset Filter
+        function resetFilter() {
+            filterKelas.value = "";
+            filterMapel.value = "";
+            filterBulanAwal.value = "";
+            filterBulanAkhir.value = "";
+            renderTableData(DATA_LOG_ABSEN);
+        }
+    </script>
 </body>
 </html>
