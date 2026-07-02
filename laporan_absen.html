@@ -3,13 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Hasil Absensi - SmartAbsen Pro</title>
+    <title>Rekap Matriks Absensi - SmartAbsen Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         @media print {
-            body { background: white; color: black; }
+            body { background: white; color: black; padding: 0; }
             .no-print { display: none !important; }
-            .print-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+            .print-card { box-shadow: none !important; border: none !important; }
+            table { font-size: 11px; }
+        }
+        /* Mengunci kolom nama agar tetap terlihat saat di-scroll ke samping */
+        .sticky-col {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            background-color: #f8fafc;
+            z-index: 10;
+        }
+        thead th.sticky-col {
+            background-color: #0f172a;
+            color: white;
+            z-index: 20;
         }
     </style>
 </head>
@@ -19,226 +33,207 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Laporan Publik</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Format Jurnal Guru</span>
             </div>
-            <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 flex items-center gap-1 transition">
-                ← Kembali ke Absen
-            </a>
+            <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+    <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         
         <div class="text-center md:text-left border-b border-slate-200 pb-4">
-            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">REKAPITULASI LAPORAN ABSENSI</h1>
-            <p class="text-sm text-slate-500 mt-1">Sistem Informasi Monitoring Kehadiran Siswa/Pegawai</p>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">JURNAL REKAPITULASI PRESENSI SISWA</h1>
+            <p id="sub-judul" class="text-sm text-slate-500 mt-1">Silakan tentukan filter Kelas & Mapel terlebih dahulu.</p>
         </div>
 
-        <div class="no-print bg-white rounded-xl shadow-xs border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4 print-card">
-            
+        <div class="no-print bg-white rounded-xl shadow-xs border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas</label>
-                <select id="filter-kelas" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                    <option value="">-- Semua Kelas --</option>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas *</label>
+                <select id="filter-kelas" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
                     </select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Mata Pelajaran / Kegiatan</label>
-                <select id="filter-mapel" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                    <option value="">-- Semua Mapel --</option>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Mapel *</label>
+                <select id="filter-mapel" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
                     </select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bulan Awal</label>
-                <input type="month" id="filter-bulan-awal" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Mulai Bulan</label>
+                <input type="month" id="filter-bulan-awal" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bulan Akhir</label>
-                <input type="month" id="filter-bulan-akhir" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Sampai Bulan</label>
+                <input type="month" id="filter-bulan-akhir" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
             </div>
             
-            <div class="md:col-span-4 flex justify-end space-x-3 border-t border-slate-100 pt-3 mt-1">
-                <button onclick="resetFilter()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
-                    Reset Filter
-                </button>
+            <div class="md:col-span-4 flex justify-end pt-2">
                 <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 px-5 rounded-lg text-sm shadow-xs flex items-center gap-2 transition">
-                    🖨️ Cetak Laporan
+                    🖨️ Cetak / Simpan PDF
                 </button>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-                <div class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total Log</div>
-                <div id="stat-total" class="text-2xl font-bold text-slate-900 mt-1">0</div>
-            </div>
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-2xs">
-                <div class="text-xs font-bold text-emerald-600 uppercase tracking-wide">Hadir</div>
-                <div id="stat-hadir" class="text-2xl font-bold text-emerald-700 mt-1">0</div>
-            </div>
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-2xs">
-                <div class="text-xs font-bold text-amber-600 uppercase tracking-wide">Izin/Sakit</div>
-                <div id="stat-izin" class="text-2xl font-bold text-amber-700 mt-1">0</div>
-            </div>
-            <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 shadow-2xs">
-                <div class="text-xs font-bold text-rose-600 uppercase tracking-wide">Alfa/Tanpa Ket.</div>
-                <div id="stat-alfa" class="text-2xl font-bold text-rose-700 mt-1">0</div>
             </div>
         </div>
 
         <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden print-card">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-900 text-white text-xs font-bold tracking-wider uppercase border-b border-slate-200">
-                            <th class="p-3.5 pl-5">No</th>
-                            <th class="p-3.5">Tanggal / Waktu</th>
-                            <th class="p-3.5">Nama Lengkap</th>
-                            <th class="p-3.5">Kelas</th>
-                            <th class="p-3.5">Mata Pelajaran</th>
-                            <th class="p-3.5 pr-5">Keterangan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body" class="divide-y divide-slate-200 text-sm font-medium text-slate-700">
+            <div class="overflow-x-auto max-w-full">
+                <table class="w-full text-left border-collapse min-w-max">
+                    <thead id="table-head">
+                        </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-200 text-sm text-slate-700">
                         </tbody>
                 </table>
             </div>
-            
-            <div id="no-data-alert" class="hidden text-center py-12 bg-white">
-                <div class="text-slate-300 text-5xl mb-2">🔍</div>
-                <h3 class="text-base font-bold text-slate-700">Data Tidak Ditemukan</h3>
-                <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Silakan sesuaikan pengaturan kombinasi kelas, mapel, atau rentang periode bulan Anda.</p>
+
+            <div id="filter-prompt" class="text-center py-12 bg-white">
+                <div class="text-slate-300 text-5xl mb-2">📋</div>
+                <h3 class="text-base font-bold text-slate-700">Pilih Kelas dan Mata Pelajaran</h3>
+                <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Silakan tentukan kombinasi kelas dan mata pelajaran untuk memuat lembar absensi siswa.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // 1. DATA MASTER DARI LOG_ABSEN (Silakan ganti isi array di bawah ini dengan konversi data .csv Anda)
-        // Format Tanggal disarankan: YYYY-MM-DD atau YYYY-MM-DD HH:MM
+        // DATA LOG ABSENSI (diambil dari Sheet Log_Absen)
         const DATA_LOG_ABSEN = [
-            { tanggal: "2026-06-15 07:30", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "Hadir" },
-            { tanggal: "2026-06-15 07:32", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "Hadir" },
-            { tanggal: "2026-06-16 08:00", nama: "I Ketut Wijaya", kelas: "XII TKJ 2", mapel: "Jaringan Dasar", status: "Izin" },
-            { tanggal: "2026-07-01 07:45", nama: "I Gede Ananda", kelas: "XI RPL 1", mapel: "Basis Data", status: "Hadir" },
-            { tanggal: "2026-07-02 09:15", nama: "Wayan Subagia", kelas: "XII TKJ 2", mapel: "Jaringan Dasar", status: "Alfa" }
+            { tanggal: "2026-06-01", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
+            { tanggal: "2026-06-01", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
+            { tanggal: "2026-06-08", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "I" },
+            { tanggal: "2026-06-08", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
+            { tanggal: "2026-06-15", nama: "I Putu Karmayasa", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "H" },
+            { tanggal: "2026-06-15", nama: "Ni Made Arianti", kelas: "XI RPL 1", mapel: "Pemrograman Web", status: "A" },
+            
+            // Contoh data kelas lain
+            { tanggal: "2026-06-02", nama: "I Gede Ananda", kelas: "XII TKJ 2", mapel: "Jaringan", status: "H" },
+            { tanggal: "2026-06-09", nama: "I Gede Ananda", kelas: "XII TKJ 2", mapel: "Jaringan", status: "S" }
         ];
 
-        // Inisialisasi Element DOM
         const filterKelas = document.getElementById('filter-kelas');
         const filterMapel = document.getElementById('filter-mapel');
         const filterBulanAwal = document.getElementById('filter-bulan-awal');
         const filterBulanAkhir = document.getElementById('filter-bulan-akhir');
+        const tableHead = document.getElementById('table-head');
         const tableBody = document.getElementById('table-body');
-        const noDataAlert = document.getElementById('no-data-alert');
+        const filterPrompt = document.getElementById('filter-prompt');
+        const subJudul = document.getElementById('sub-judul');
 
-        // Pemuatan Awal Aplikasi
         document.addEventListener("DOMContentLoaded", () => {
-            setupFilterOptions();
-            renderTableData(DATA_LOG_ABSEN);
-
-            // Pasang event listener ke setiap elemen filter
-            [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(element => {
-                element.addEventListener('change', jalankanFilter);
+            setupDropdowns();
+            // Jalankan fungsi filter saat ada perubahan input dropdown
+            [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
+                el.addEventListener('change', generateMatrixTable);
             });
         });
 
-        // Membuat daftar pilihan filter Kelas dan Mapel secara otomatis berdasarkan ketersediaan data unik
-        function setupFilterOptions() {
+        function setupDropdowns() {
             const listKelas = [...new Set(DATA_LOG_ABSEN.map(item => item.kelas))].sort();
             const listMapel = [...new Set(DATA_LOG_ABSEN.map(item => item.mapel))].sort();
 
-            listKelas.forEach(kelas => {
-                filterKelas.options.add(new Option(kelas, kelas));
-            });
-            listMapel.forEach(mapel => {
-                filterMapel.options.add(new Option(mapel, mapel));
-            });
+            filterKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            filterMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
+
+            listKelas.forEach(k => filterKelas.options.add(new Option(k, k)));
+            listMapel.forEach(m => filterMapel.options.add(new Option(m, m)));
         }
 
-        // Fungsi Render Mengisi Data Ke Tabel Utama beserta perhitungannya
-        function renderTableData(data) {
-            tableBody.innerHTML = "";
-            
-            if (data.length === 0) {
-                noDataAlert.classList.remove('hidden');
-                updateStatistik(0, 0, 0, 0);
+        function generateMatrixTable() {
+            const kelasAktif = filterKelas.value;
+            const mapelAktif = filterMapel.value;
+            const blnAwal = filterBulanAwal.value;
+            const blnAkhir = filterBulanAkhir.value;
+
+            // Validasi: Wajib isi Kelas dan Mapel
+            if (!kelasAktif || !mapelAktif) {
+                tableHead.innerHTML = "";
+                tableBody.innerHTML = "";
+                filterPrompt.classList.remove('hidden');
+                subJudul.innerText = "Silakan tentukan filter Kelas & Mapel terlebih dahulu.";
                 return;
             }
-            noDataAlert.classList.add('hidden');
 
-            let countHadir = 0, countIzin = 0, countAlfa = 0;
+            filterPrompt.classList.add('hidden');
+            subJudul.innerText = `Kelas: ${kelasAktif} | Mata Pelajaran: ${mapelAktif}`;
 
-            data.forEach((item, index) => {
-                // Hitung Statistik Kehadiran
-                const st = item.status.toLowerCase();
-                if (st === 'hadir' || st === 'h') countHadir++;
-                else if (st === 'izin' || st === 'sakit' || st === 'i' || st === 's') countIzin++;
-                else countAlfa++;
+            // 1. Saring data mentah berdasarkan filter yang ditentukan guru
+            const dataDisaring = DATA_LOG_ABSEN.filter(item => {
+                const blnItem = item.tanggal.substring(0, 7);
+                return item.kelas === kelasAktif &&
+                       item.mapel === mapelAktif &&
+                       (!blnAwal || blnItem >= blnAwal) &&
+                       (!blnAkhir || blnItem <= blnAkhir);
+            });
 
-                // Set warna badge status keterangan
-                let badgeClass = "bg-slate-100 text-slate-700";
-                if (st === 'hadir' || st === 'h') badgeClass = "bg-emerald-100 text-emerald-800";
-                else if (st === 'izin' || st === 'sakit' || st === 'i' || st === 's') badgeClass = "bg-amber-100 text-amber-800";
-                else if (st === 'alfa' || st === 'a') badgeClass = "bg-rose-100 text-rose-800";
+            // 2. Kumpulkan daftar tanggal unik & daftar nama siswa unik secara berurutan
+            const daftarTanggal = [...new Set(dataDisaring.map(item => item.tanggal))].sort();
+            const daftarSiswa = [...new Set(dataDisaring.map(item => item.nama))].sort();
 
-                const row = `
+            // 3. SUSUN KOLOM HEADER TABEL (Dinamis Berjejer ke Kanan)
+            let headHTML = `
+                <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                    <th class="p-3 pl-5 text-center w-12 bg-slate-950">No</th>
+                    <th class="p-3 sticky-col min-w-[200px] bg-slate-950 text-left">Nama Lengkap Siswa</th>
+                    ${daftarTanggal.map(tgl => {
+                        // Memotong format "2026-06-15" menjadi "15/06" agar kolom tidak terlalu lebar di layar
+                        const komponen = tgl.split('-');
+                        const tglPendek = komponen.length === 3 ? `${komponen[2]}/${komponen[1]}` : tgl;
+                        return `<th class="p-3 text-center min-w-[60px] border-l border-slate-800">${tglPendek}</th>`;
+                    }).join('')}
+                    <th class="p-3 text-center border-l border-slate-800 bg-emerald-900 text-white font-bold">H</th>
+                    <th class="p-3 text-center border-l border-slate-800 bg-amber-800 text-white font-bold">I/S</th>
+                    <th class="p-3 text-center border-l border-slate-800 bg-rose-900 text-white font-bold">A</th>
+                </tr>
+            `;
+            tableHead.innerHTML = headHTML;
+
+            // 4. SUSUN BARIS MATRIX SISWA (Berderet Ke Bawah)
+            tableBody.innerHTML = "";
+            if (daftarSiswa.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 5}" class="p-8 text-center text-slate-400 text-xs">Tidak ada riwayat presensi pada periode ini.</td></tr>`;
+                return;
+            }
+
+            daftarSiswa.forEach((siswa, index) => {
+                let hitungH = 0, hitungI = 0, hitungA = 0;
+
+                // Bangun kolom-kolom status per tanggal
+                let kolomStatusHTML = daftarTanggal.map(tgl => {
+                    // Cari status siswa ini di tanggal tersebut
+                    const cocok = dataDisaring.find(item => item.nama === siswa && item.tanggal === tgl);
+                    let status = cocok ? cocok.status.toUpperCase() : "-";
+
+                    // Koreksi kode status jika menggunakan format kata utuh
+                    if (status === "HADIR") status = "H";
+                    if (status === "IZIN" || status === "SAKIT") status = "I";
+                    if (status === "ALFA" || status === "TANPA KETERANGAN") status = "A";
+
+                    // Hitung kalkulasi rekapitulasi total di akhir baris
+                    if (status === "H") hitungH++;
+                    else if (status === "I" || status === "S") hitungI++;
+                    else if (status === "A") hitungA++;
+
+                    // Pewarnaan teks indikator huruf agar mudah dipantau guru
+                    let warnaTeks = "text-slate-300";
+                    if (status === "H") warnaTeks = "text-emerald-600 font-bold";
+                    if (status === "I" || status === "S") warnaTeks = "text-amber-600 font-bold";
+                    if (status === "A") warnaTeks = "text-rose-600 font-bold";
+
+                    return `<td class="p-3 text-center border-l border-slate-100 ${warnaTeks}">${status}</td>`;
+                }).join('');
+
+                // Masukkan struktur baris siswa ke dalam tubuh tabel
+                let rowHTML = `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3.5 pl-5 text-slate-400 font-mono text-xs">${index + 1}</td>
-                        <td class="p-3.5 whitespace-nowrap font-mono text-xs text-slate-500">${item.tanggal}</td>
-                        <td class="p-3.5 text-slate-900 font-semibold">${item.nama}</td>
-                        <td class="p-3.5 text-slate-600">${item.kelas}</td>
-                        <td class="p-3.5 text-slate-600">${item.mapel}</td>
-                        <td class="p-3.5 pr-5">
-                            <span class="px-2.5 py-1 text-xs font-bold rounded-md ${badgeClass}">${item.status}</span>
-                        </td>
+                        <td class="p-3 pl-5 text-center font-mono text-xs text-slate-400 bg-slate-100/50">${index + 1}</td>
+                        <td class="p-3 font-semibold text-slate-900 sticky-col border-r border-slate-200">${siswa}</td>
+                        ${kolomStatusHTML}
+                        <td class="p-3 text-center border-l border-slate-200 bg-emerald-50 text-emerald-800 font-bold">${hitungH}</td>
+                        <td class="p-3 text-center border-l border-slate-100 bg-amber-50 text-amber-800 font-bold">${hitungI}</td>
+                        <td class="p-3 text-center border-l border-slate-100 bg-rose-50 text-rose-800 font-bold">${hitungA}</td>
                     </tr>
                 `;
-                tableBody.insertAdjacentHTML('beforeend', row);
+                tableBody.insertAdjacentHTML('beforeend', rowHTML);
             });
-
-            updateStatistik(data.length, countHadir, countIzin, countAlfa);
-        }
-
-        // Update Text Counter di Dashboard atas secara dinamis
-        function updateStatistik(total, hadir, izin, alfa) {
-            document.getElementById('stat-total').innerText = total;
-            document.getElementById('stat-hadir').innerText = hadir;
-            document.getElementById('stat-izin').innerText = izin;
-            document.getElementById('stat-alfa').innerText = alfa;
-        }
-
-        // Algoritma Pemfilteran Utama Berkecepatan Tinggi (Flash Mode)
-        function jalankanFilter() {
-            const valKelas = filterKelas.value;
-            const valMapel = filterMapel.value;
-            const valAwal = filterBulanAwal.value; // Format: YYYY-MM
-            const valAkhir = filterBulanAkhir.value; // Format: YYYY-MM
-
-            const hasilFilter = DATA_LOG_ABSEN.filter(item => {
-                // Ambil string Tahun-Bulan saja dari properti tanggal log absensi (index 0 hingga 7)
-                const bulanItem = item.tanggal.substring(0, 7); 
-
-                const cocokKelas = !valKelas || item.kelas === valKelas;
-                const cocokMapel = !valMapel || item.mapel === valMapel;
-                const cocokAwal = !valAwal || bulanItem >= valAwal;
-                const cocokAkhir = !valAkhir || bulanItem <= valAkhir;
-
-                return cocokKelas && cocokMapel && cocokAwal && cocokAkhir;
-            });
-
-            renderTableData(hasilFilter);
-        }
-
-        // Fungsi Tombol Reset Filter
-        function resetFilter() {
-            filterKelas.value = "";
-            filterMapel.value = "";
-            filterBulanAwal.value = "";
-            filterBulanAkhir.value = "";
-            renderTableData(DATA_LOG_ABSEN);
         }
     </script>
 </body>
