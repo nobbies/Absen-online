@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Matriks Absensi - SmartAbsen Pro</title>
+    <title>Rekap Matriks Absensi Detail - SmartAbsen Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         @media print {
@@ -32,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Jurnal Google Sheet</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database & Log Absen</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -49,14 +49,14 @@
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas *</label>
                 <select id="filter-kelas" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                    <option value="">-- Memuat Data... --</option>
+                    <option value="">-- Memuat Kelas... --</option>
                 </select>
             </div>
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Mapel *</label>
                 <select id="filter-mapel" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                    <option value="">-- Memuat Data... --</option>
+                    <option value="">-- Memuat Mapel... --</option>
                 </select>
             </div>
 
@@ -88,15 +88,20 @@
             <div id="filter-prompt" class="text-center py-12 bg-white">
                 <div id="prompt-icon" class="text-slate-300 text-5xl mb-2">⏳</div>
                 <h3 id="prompt-title" class="text-base font-bold text-slate-700">Menghubungkan ke Google Sheet...</h3>
-                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Mengunduh riwayat log presensi.</p>
+                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Sinkronisasi Database Struktur & Log Kehadiran.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // Gunakan URL Publikasi Google Sheet Anda di sini
-        const URL_GOOGLE_SHEET = "https://script.google.com/macros/s/AKfycbyo2UpV5gX_c5JP9TWCYboJQpXDnJp_BIUafelk9cxf7OxdQfEbi2lxnKGlChyGpud5/exec";
+        // MASUKKAN BASE URL SPREADSHEET UTAMA ANDA DI SINI
+        const BASE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?output=csv";
+        
+        // Parameter GID untuk masing-masing Lembar Kerja (Silakan ganti jika GID sheet Anda berbeda)
+        const URL_DATABASE = BASE_URL + "&gid=0"; // Sheet Database induk nama & kelas
+        const URL_LOG_ABSEN = BASE_URL + "&gid=1815124151"; // Sheet Log_Absen perekam absen harian
 
+        let MASTER_DATABASE_SISWA = [];
         let DATA_LOG_ABSEN = [];
 
         const filterKelas = document.getElementById('filter-kelas');
@@ -111,25 +116,13 @@
         const promptDesc = document.getElementById('prompt-desc');
         const subJudul = document.getElementById('sub-judul');
 
-        document.addEventListener("DOMContentLoaded", ambilDataGoogleSheet);
+        document.addEventListener("DOMContentLoaded", muatSeluruhData);
 
         [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
             el.addEventListener('change', generateMatrixTable);
         });
 
-        function ambilDataGoogleSheet() {
-            fetch(URL_GOOGLE_SHEET)
-                .then(response => response.text())
-                .then(text => prosesDataCSV(text))
-                .catch(error => {
-                    console.error(error);
-                    promptIcon.innerText = "❌";
-                    promptTitle.innerText = "Koneksi Google Sheet Gagal";
-                    promptDesc.innerText = "Periksa kembali setelan publikasi CSV di Google Sheets Anda.";
-                });
-        }
-
-        // Fungsi Parser CSV Standar Industri yang Menjamin Keamanan Kolom Teks ber-Spasi/Koma
+        // Parser CSV standar industri yang aman dari gangguan tanda petik ganda
         function parseCSVLine(text) {
             let p = false, r = [''], c = 0;
             for (let i = 0; i < text.length; i++) {
@@ -142,58 +135,90 @@
             return r;
         }
 
-        function prosesDataCSV(text) {
-            DATA_LOG_ABSEN = [];
+        async function muatSeluruhData() {
+            try {
+                // 1. Ambil data Sheet Database
+                const resDb = await fetch(URL_DATABASE);
+                const textDb = await resDb.text();
+                prosesDatabaseSiswa(textDb);
+
+                // 2. Ambil data Sheet Log_Absen
+                const resLog = await fetch(URL_LOG_ABSEN);
+                const textLog = await resLog.text();
+                prosesLogAbsen(textLog);
+
+                // Aktifkan Filter setelah kedua data siap
+                [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
+                    el.disabled = false;
+                    el.classList.remove('bg-slate-100');
+                });
+
+                setupDropdowns();
+
+                promptIcon.innerText = "📊";
+                promptTitle.innerText = "Database Siap & Sinkron!";
+                promptDesc.innerText = "Silakan tentukan Kelas dan Mata Pelajaran untuk menyusun jurnal presensi.";
+                subJudul.innerText = `Terhubung. Terbaca ${MASTER_DATABASE_SISWA.length} siswa dan ${DATA_LOG_ABSEN.length} log riwayat absen.`;
+
+            } catch (error) {
+                console.error(error);
+                promptIcon.innerText = "❌";
+                promptTitle.innerText = "Gagal Menghubungkan Google Sheet";
+                promptDesc.innerText = "Pastikan setelan berbagi/publikasi tautan web CSV di akun spreadsheet Anda sudah aktif.";
+            }
+        }
+
+        function prosesDatabaseSiswa(text) {
+            MASTER_DATABASE_SISWA = [];
             const lines = text.split(/\r?\n/);
-            
-            for (let i = 0; i < lines.length; i++) {
+            for (let i = 1; i < lines.length; i++) { // Lewati baris indeks 0 (Header)
                 const line = lines[i].trim();
                 if (!line) continue;
-
-                // Memakai Parser Aman
                 const columns = parseCSVLine(line);
-                
+                if (columns.length >= 3) {
+                    const idSiswa = columns[0].trim();
+                    const nama = columns[1].trim();
+                    const kelas = columns[2].trim();
+                    // Kolom ke-5 (index 5) di database Anda adalah Mapel bawaan siswa
+                    const mapelBawaan = columns[5] ? columns[5].trim() : ""; 
+
+                    if (nama && kelas && nama.toLowerCase() !== "nama") {
+                        MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelas, mapel: mapelBawaan });
+                    }
+                }
+            }
+        }
+
+        function prosesLogAbsen(text) {
+            DATA_LOG_ABSEN = [];
+            const lines = text.split(/\r?\n/);
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const columns = parseCSVLine(line);
                 if (columns.length >= 5) {
-                    const tglWaktu = columns[0].trim(); 
-                    const tglSaja = tglWaktu.split(' ')[0]; 
+                    const tglWaktu = columns[0].trim();
+                    const tglSaja = tglWaktu.split(' ')[0];
                     const kelas = columns[1].trim();
                     const mapel = columns[2].trim();
                     const nama = columns[3].trim();
                     const status = columns[4].trim();
 
-                    // Mencegah baris header ikut terbaca masuk dropdown
-                    if (!kelas || !nama || kelas.toLowerCase() === "kelas" || nama.toLowerCase() === "nama siswa" || tglWaktu.toLowerCase().includes("timestamp")) {
-                        continue;
+                    if (nama) {
+                        DATA_LOG_ABSEN.push({ tanggal: tglSaja, kelas: kelas, mapel: mapel, nama: nama, status: status });
                     }
-
-                    DATA_LOG_ABSEN.push({
-                        tanggal: tglSaja,
-                        kelas: kelas,
-                        mapel: mapel,
-                        nama: nama,
-                        status: status
-                    });
                 }
-            }
-
-            if (DATA_LOG_ABSEN.length > 0) {
-                [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir].forEach(el => {
-                    el.disabled = false;
-                    el.classList.remove('bg-slate-100');
-                });
-                
-                setupDropdowns();
-                
-                promptIcon.innerText = "📊";
-                promptTitle.innerText = "Data Berhasil Disinkronkan!";
-                promptDesc.innerText = "Silakan tentukan Kelas dan Mata Pelajaran untuk menyusun jurnal presensi.";
-                subJudul.innerText = `Terhubung ke Google Sheet. Menampung ${DATA_LOG_ABSEN.length} log kehadiran.`;
             }
         }
 
         function setupDropdowns() {
-            const listKelas = [...new Set(DATA_LOG_ABSEN.map(item => item.kelas))].filter(Boolean).sort();
-            const listMapel = [...new Set(DATA_LOG_ABSEN.map(item => item.mapel))].filter(Boolean).sort();
+            // Dropdown diambil 100% dari Master Database Sheet yang rapi tanpa terpengaruh log
+            const listKelas = [...new Set(MASTER_DATABASE_SISWA.map(item => item.kelas))].filter(Boolean).sort();
+            
+            // Mapel diambil gabungan dari Database maupun Log Absen agar variasi mapel terdeteksi menyeluruh
+            const listMapelDb = MASTER_DATABASE_SISWA.map(item => item.mapel);
+            const listMapelLog = DATA_LOG_ABSEN.map(item => item.mapel);
+            const listMapel = [...new Set([...listMapelDb, ...listMapelLog])].filter(Boolean).sort();
 
             filterKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
             filterMapel.innerHTML = '<option value="">-- Pilih Mapel --</option>';
@@ -228,7 +253,11 @@
             filterPrompt.classList.add('hidden');
             subJudul.innerText = `Kelas: ${kelasAktif} | Mata Pelajaran: ${mapelAktif}`;
 
-            const dataDisaring = DATA_LOG_ABSEN.filter(item => {
+            // Ambil daftar nama urutan asli dari sheet MASTER DATABASE sesuai kelas pilihan
+            const daftarSiswaUrut = MASTER_DATABASE_SISWA.filter(s => s.kelas === kelasAktif);
+
+            // Saring log absen untuk membuat kolom tanggal harian
+            const logDisaring = DATA_LOG_ABSEN.filter(item => {
                 const blnItem = dapatkanFormatBulan(item.tanggal);
                 return item.kelas === kelasAktif &&
                        item.mapel === mapelAktif &&
@@ -236,11 +265,10 @@
                        (!blnAkhir || blnItem <= blnAkhir);
             });
 
-            // Urutkan tanggal secara kronologis kalender
-            const daftarTanggal = [...new Set(dataDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
-            const daftarSiswa = [...new Set(dataDisaring.map(item => item.nama))].sort();
+            // Cari tanggal unik yang terdaftar pada log pertemuan tersebut
+            const daftarTanggal = [...new Set(logDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
 
-            // HEADER TABEL DENGAN REKAP STATUS MANDIRI H, D, I, S, A
+            // SUSUN KOLOM HEADER
             let headHTML = `
                 <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <th class="p-3 text-center w-12 bg-slate-950">No</th>
@@ -259,17 +287,19 @@
             `;
             tableHead.innerHTML = headHTML;
 
+            // SUSUN DATA SISWA SESUAI URUTAN ID DATABASE
             tableBody.innerHTML = "";
-            if (daftarSiswa.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ditemukan riwayat data presensi siswa untuk filter ini.</td></tr>`;
+            if (daftarSiswaUrut.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada data siswa ditemukan untuk kelas ini.</td></tr>`;
                 return;
             }
 
-            daftarSiswa.forEach((siswa, index) => {
+            daftarSiswaUrut.forEach((siswa, index) => {
                 let hitungH = 0, hitungD = 0, hitungI = 0, hitungS = 0, hitungA = 0;
 
                 let kolomStatusHTML = daftarTanggal.map(tgl => {
-                    const cocok = dataDisaring.find(item => item.nama === siswa && item.tanggal === tgl);
+                    // Cari data kehadiran di log absen berdasarkan nama siswa dan tanggal pertemuan harian
+                    const cocok = logDisaring.find(item => item.nama.toLowerCase() === siswa.nama.toLowerCase() && item.tanggal === tgl);
                     let statusRaw = cocok ? cocok.status.trim().toLowerCase() : "-";
                     let statusSingkat = "-";
 
@@ -292,7 +322,7 @@
                 let rowHTML = `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-3 text-center font-mono text-xs text-slate-400 bg-slate-100/50">${index + 1}</td>
-                        <td class="p-3 font-semibold text-slate-900 sticky-col border-r border-slate-200">${siswa}</td>
+                        <td class="p-3 font-semibold text-slate-900 sticky-col border-r border-slate-200">${siswa.nama}</td>
                         ${kolomStatusHTML}
                         <td class="p-3 text-center border-l border-slate-200 bg-emerald-50 text-emerald-800 font-bold">${hitungH}</td>
                         <td class="p-3 text-center border-l border-slate-100 bg-sky-50 text-sky-800 font-bold">${hitungD}</td>
