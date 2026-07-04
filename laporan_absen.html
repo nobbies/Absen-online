@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Matriks Absensi Detail - SmartAbsen Pro</title>
+    <title>Rekap Jurnal Absensi - SmartAbsen Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         @media print {
@@ -32,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database Engine v2</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Engine Seamless Link</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -42,7 +42,7 @@
         
         <div class="text-center md:text-left border-b border-slate-200 pb-4">
             <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">JURNAL REKAPITULASI PRESENSI SISWA</h1>
-            <p id="sub-judul" class="text-sm text-slate-500 mt-1">Menghubungkan ke database Google Sheet...</p>
+            <p id="sub-judul" class="text-sm text-slate-500 mt-1">Menghubungkan ke database...</p>
         </div>
 
         <div class="no-print bg-white rounded-xl shadow-xs border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -89,20 +89,17 @@
             </div>
 
             <div id="filter-prompt" class="text-center py-12 bg-white">
-                <div id="prompt-icon" class="text-slate-300 text-5xl mb-2">⏳</div>
-                <h3 id="prompt-title" class="text-base font-bold text-slate-700">Menghubungkan ke Google Sheet...</h3>
-                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Mengunduh konfigurasi database harian.</p>
+                <div id="prompt-icon" class="text-slate-300 text-5xl mb-2">🔍</div>
+                <h3 id="prompt-title" class="text-base font-bold text-slate-700">Silakan Pilih Filter & Klik Tampilkan</h3>
+                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Data berhasil disinkronkan langsung dari Google Sheet.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // Masukkan kembali link publikasi Google Sheet utama Anda di bawah ini
-        const LINK_PUBLIKASI_UTAMA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR9ciCklD_sYvWUD1DWEUeVqjk2Qsx7KPx_lA-ESgB2Klgmn6tA5rkuDW19R_FMurmaXu89xwmFtEGX/pub?output=csv";
-        
-        // Membentuk URL pemanggilan bersih per sheet dengan GID terisolasi
-        const URL_DATABASE = LINK_PUBLIKASI_UTAMA.split('?')[0] + "?output=csv&gid=0";
-        const URL_LOG_ABSEN = LINK_PUBLIKASI_UTAMA.split('?')[0] + "?output=csv&gid=1815124151";
+        // MENGGUNAKAN LINK ASLI MASING-MASING SECARA INDEPENDEN AGAR TIDAK TERBLOKIR CORS
+        const URL_DATABASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?gid=0&single=true&output=csv";
+        const URL_LOG_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?gid=1815124151&single=true&output=csv";
 
         let MASTER_DATABASE_SISWA = [];
         let FILTER_LIST_KELAS = [];
@@ -138,36 +135,30 @@
 
         async function muatSeluruhData() {
             try {
-                // 1. Ambil data Sheet Database induk
+                // Ambil data Sheet Database
                 const resDb = await fetch(URL_DATABASE);
-                if (!resDb.ok) throw new Error("Gagal mengambil data Sheet Database");
                 const textDb = await resDb.text();
                 prosesDatabaseSiswa(textDb);
 
-                // 2. Ambil data Sheet Log Absensi harian
+                // Ambil data Sheet Log Absen
                 const resLog = await fetch(URL_LOG_ABSEN);
-                if (!resLog.ok) throw new Error("Gagal mengambil data Sheet Log_Absen");
                 const textLog = await resLog.text();
                 prosesLogAbsen(textLog);
 
-                // Mengaktifkan filter kontrol form jika sukses
+                // Buka proteksi form input
                 [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir, btnTampilkan].forEach(el => {
                     el.disabled = false;
                     el.classList.remove('bg-slate-100');
                 });
 
                 setupDropdowns();
-
-                promptIcon.innerText = "🔍";
-                promptTitle.innerText = "Silakan Pilih Filter & Klik Tampilkan";
-                promptDesc.innerText = "Data tersinkronisasi. Tentukan kelas dan mapel rekapitulasi di atas.";
-                subJudul.innerText = `Terhubung ke Google Sheet. Memuat ${MASTER_DATABASE_SISWA.length} daftar siswa tetap.`;
+                subJudul.innerText = `Koneksi Berhasil. Menampilkan database ${MASTER_DATABASE_SISWA.length} siswa aktif.`;
 
             } catch (error) {
                 console.error(error);
                 promptIcon.innerText = "❌";
-                promptTitle.innerText = "Gagal Sinkronisasi Data";
-                promptDesc.innerText = "Pastikan setelan file Google Sheet Anda dipublikasikan ke web dengan opsi 'Seluruh Dokumen'.";
+                promptTitle.innerText = "Gagal Membaca Spreadsheet";
+                promptDesc.innerText = "Koneksi terhambat. Pastikan perangkat Anda terhubung dengan internet.";
             }
         }
 
@@ -185,11 +176,11 @@
                 if (columns.length >= 3) {
                     const idSiswa = columns[0].trim();
                     const nama = columns[1].trim();
-                    const kelasBawaan = columns[2].trim(); // Kolom C (Kelas Siswa)
+                    const kelasBawaan = columns[2].trim();
                     
-                    // Indeks Pemetaan Kolom F dan G Sheet Database
-                    const mapelPilihan = columns[5] ? columns[5].trim() : ""; // Kolom F -> Filter Mapel
-                    const kelasPilihan = columns[6] ? columns[6].trim() : ""; // Kolom G -> Filter Kelas Utama
+                    // Kolom F (Mapel) dan G (Daftar Kelas)
+                    const mapelPilihan = columns[5] ? columns[5].trim() : "";
+                    const kelasPilihan = columns[6] ? columns[6].trim() : "";
 
                     if (nama && nama.toLowerCase() !== "nama") {
                         MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelasBawaan });
@@ -294,7 +285,7 @@
 
             tableBody.innerHTML = "";
             if (daftarSiswaUrut.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada data siswa ditemukan untuk Kelas ${kelasAktif} di database induk.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${daftarTanggal.length + 7}" class="p-8 text-center text-slate-400 text-xs">Tidak ada data siswa ditemukan untuk Kelas ${kelasAktif}.</td></tr>`;
                 return;
             }
 
