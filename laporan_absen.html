@@ -32,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Engine Seamless Link</span>
+                <span class="bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-emerald-100">Dropdown Fixed</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -97,7 +97,7 @@
     </main>
 
     <script>
-        // MENGGUNAKAN LINK ASLI MASING-MASING SECARA INDEPENDEN AGAR TIDAK TERBLOKIR CORS
+        // Link CSV Google Sheet Independent
         const URL_DATABASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?gid=0&single=true&output=csv";
         const URL_LOG_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?gid=1815124151&single=true&output=csv";
 
@@ -121,31 +121,25 @@
 
         document.addEventListener("DOMContentLoaded", muatSeluruhData);
 
-        function parseCSVLine(text) {
-            let p = false, r = [''], c = 0;
-            for (let i = 0; i < text.length; i++) {
-                let el = text[i], next = text[i+1];
-                if (el == '"') { if (p && next == '"') { r[c] += '"'; i++; } else { p = !p; } }
-                else if (el == ',' && !p) { r[++c] = ''; }
-                else if ((el == '\r' || el == '\n') && !p) { break; }
-                else { r[c] += el; }
-            }
-            return r;
+        // Parser CSV baru: Jauh lebih cerdas memilah teks bertanda kutip ganda
+        function parseCSV(text) {
+            let lines = text.split(/\r\n|\n/);
+            return lines.map(line => {
+                let matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+                return line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(val => val.replace(/^"|"$/g, '').trim());
+            });
         }
 
         async function muatSeluruhData() {
             try {
-                // Ambil data Sheet Database
                 const resDb = await fetch(URL_DATABASE);
                 const textDb = await resDb.text();
                 prosesDatabaseSiswa(textDb);
 
-                // Ambil data Sheet Log Absen
                 const resLog = await fetch(URL_LOG_ABSEN);
                 const textLog = await resLog.text();
                 prosesLogAbsen(textLog);
 
-                // Buka proteksi form input
                 [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir, btnTampilkan].forEach(el => {
                     el.disabled = false;
                     el.classList.remove('bg-slate-100');
@@ -167,49 +161,45 @@
             FILTER_LIST_KELAS = [];
             FILTER_LIST_MAPEL = [];
             
-            const lines = text.split(/\r?\n/);
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                
-                const columns = parseCSVLine(line);
-                if (columns.length >= 3) {
-                    const idSiswa = columns[0].trim();
-                    const nama = columns[1].trim();
-                    const kelasBawaan = columns[2].trim();
-                    
-                    // Kolom F (Mapel) dan G (Daftar Kelas)
-                    const mapelPilihan = columns[5] ? columns[5].trim() : "";
-                    const kelasPilihan = columns[6] ? columns[6].trim() : "";
+            const rows = parseCSV(text);
+            
+            // Mengabaikan baris header indeks 0 (ID, Nama, Kelas...)
+            for (let i = 1; i < rows.length; i++) {
+                const columns = rows[i];
+                if (columns.length < 3) continue;
 
-                    if (nama && nama.toLowerCase() !== "nama") {
-                        MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelasBawaan });
-                    }
-                    if (kelasPilihan && kelasPilihan.toLowerCase() !== "daftar kelas") {
-                        FILTER_LIST_KELAS.push(kelasPilihan);
-                    }
-                    if (mapelPilihan && mapelPilihan.toLowerCase() !== "mapel") {
-                        FILTER_LIST_MAPEL.push(mapelPilihan);
-                    }
+                const idSiswa = columns[0];
+                const nama = columns[1];
+                const kelasBawaan = columns[2]; // Kolom C (Kelas Siswa Harian)
+                
+                // Pencocokan letak kolom F (Index 5) & Kolom G (Index 6)
+                const mapelPilihan = columns[5] ? columns[5] : ""; 
+                const kelasPilihan = columns[6] ? columns[6] : ""; 
+
+                if (nama && nama.toLowerCase() !== "nama") {
+                    MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelasBawaan });
+                }
+                if (kelasPilihan && kelasPilihan.toLowerCase() !== "daftar kelas") {
+                    FILTER_LIST_KELAS.push(kelasPilihan);
+                }
+                if (mapelPilihan && mapelPilihan.toLowerCase() !== "mapel") {
+                    FILTER_LIST_MAPEL.push(mapelPilihan);
                 }
             }
         }
 
         function prosesLogAbsen(text) {
             DATA_LOG_ABSEN = [];
-            const lines = text.split(/\r?\n/);
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                
-                const columns = parseCSVLine(line);
+            const rows = parseCSV(text);
+            for (let i = 1; i < rows.length; i++) {
+                const columns = rows[i];
                 if (columns.length >= 5) {
-                    const tglWaktu = columns[0].trim();
+                    const tglWaktu = columns[0];
                     const tglSaja = tglWaktu.split(' ')[0];
-                    const kelas = columns[1].trim();
-                    const mapel = columns[2].trim();
-                    const nama = columns[3].trim();
-                    const status = columns[4].trim();
+                    const kelas = columns[1];
+                    const mapel = columns[2];
+                    const nama = columns[3];
+                    const status = columns[4];
 
                     if (nama) {
                         DATA_LOG_ABSEN.push({ tanggal: tglSaja, kelas: kelas, mapel: mapel, nama: nama, status: status });
@@ -219,6 +209,7 @@
         }
 
         function setupDropdowns() {
+            // Membersihkan duplikasi data dan mengurutkannya secara alfabetis A-Z
             const listKelasBersih = [...new Set(FILTER_LIST_KELAS)].filter(Boolean).sort();
             const listMapelBersih = [...new Set(FILTER_LIST_MAPEL)].filter(Boolean).sort();
 
