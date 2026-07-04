@@ -28,13 +28,12 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen">
 
-    <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-xs">
+    <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-emerald-100">Dropdown Fixed</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Modul Cetak Laporan</span>
             </div>
-            <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
     </header>
 
@@ -45,7 +44,7 @@
             <p id="sub-judul" class="text-sm text-slate-500 mt-1">Menghubungkan ke database...</p>
         </div>
 
-        <div class="no-print bg-white rounded-xl shadow-xs border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="no-print bg-white rounded-xl shadow-sm border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas *</label>
                 <select id="filter-kelas" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
@@ -71,16 +70,16 @@
             </div>
             
             <div class="md:col-span-4 flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
-                <button id="btn-tampilkan" disabled onclick="generateMatrixTable()" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow-xs transition cursor-pointer">
+                <button id="btn-tampilkan" disabled onclick="generateMatrixTable()" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow-sm transition cursor-pointer">
                     🔍 Tampilkan Laporan
                 </button>
-                <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-5 rounded-lg text-sm shadow-xs flex items-center gap-2 transition">
+                <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-5 rounded-lg text-sm shadow-sm flex items-center gap-2 transition">
                     🖨️ Cetak Jurnal (PDF)
                 </button>
             </div>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden print-card">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden print-card">
             <div class="overflow-x-auto max-w-full">
                 <table class="w-full text-left border-collapse min-w-max">
                     <thead id="table-head"></thead>
@@ -91,15 +90,15 @@
             <div id="filter-prompt" class="text-center py-12 bg-white">
                 <div id="prompt-icon" class="text-slate-300 text-5xl mb-2">🔍</div>
                 <h3 id="prompt-title" class="text-base font-bold text-slate-700">Silakan Pilih Filter & Klik Tampilkan</h3>
-                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Data berhasil disinkronkan langsung dari Google Sheet.</p>
+                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Data berhasil disinkronkan langsung dari database induk.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // Link CSV Google Sheet Independent
-        const URL_DATABASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR9ciCklD_sYvWUD1DWEUeVqjk2Qsx7KPx_lA-ESgB2Klgmn6tA5rkuDW19R_FMurmaXu89xwmFtEGX/pub?output=csv";
-        const URL_LOG_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR9ciCklD_sYvWUD1DWEUeVqjk2Qsx7KPx_lA-ESgB2Klgmn6tA5rkuDW19R_FMurmaXu89xwmFtEGX/pub?output=csv";
+        // Memakai tautan CSV Google Sheet publik agar pembacaan kolom konsisten dan akurat
+        const URL_DATABASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?gid=0&single=true&output=csv";
+        const URL_LOG_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPr9q8pW-kYqbyu9Xf9m95hIicEIn24P3bT8b_gW1y_f8mX9B0Hk7L2v1L/pub?gid=1815124151&single=true&output=csv";
 
         let MASTER_DATABASE_SISWA = [];
         let FILTER_LIST_KELAS = [];
@@ -121,11 +120,10 @@
 
         document.addEventListener("DOMContentLoaded", muatSeluruhData);
 
-        // Parser CSV baru: Jauh lebih cerdas memilah teks bertanda kutip ganda
+        // Parser CSV tangguh menggunakan penanganan Ekspresi Reguler (Regex)
         function parseCSV(text) {
             let lines = text.split(/\r\n|\n/);
             return lines.map(line => {
-                let matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
                 return line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(val => val.replace(/^"|"$/g, '').trim());
             });
         }
@@ -152,7 +150,7 @@
                 console.error(error);
                 promptIcon.innerText = "❌";
                 promptTitle.innerText = "Gagal Membaca Spreadsheet";
-                promptDesc.innerText = "Koneksi terhambat. Pastikan perangkat Anda terhubung dengan internet.";
+                promptDesc.innerText = "Pastikan setelan internet terhubung dengan baik.";
             }
         }
 
@@ -163,16 +161,15 @@
             
             const rows = parseCSV(text);
             
-            // Mengabaikan baris header indeks 0 (ID, Nama, Kelas...)
             for (let i = 1; i < rows.length; i++) {
                 const columns = rows[i];
                 if (columns.length < 3) continue;
 
                 const idSiswa = columns[0];
                 const nama = columns[1];
-                const kelasBawaan = columns[2]; // Kolom C (Kelas Siswa Harian)
+                const kelasBawaan = columns[2]; 
                 
-                // Pencocokan letak kolom F (Index 5) & Kolom G (Index 6)
+                // Menargetkan kolom ke-6 (Index 5) untuk Mapel dan kolom ke-7 (Index 6) untuk Kelas
                 const mapelPilihan = columns[5] ? columns[5] : ""; 
                 const kelasPilihan = columns[6] ? columns[6] : ""; 
 
@@ -209,7 +206,6 @@
         }
 
         function setupDropdowns() {
-            // Membersihkan duplikasi data dan mengurutkannya secara alfabetis A-Z
             const listKelasBersih = [...new Set(FILTER_LIST_KELAS)].filter(Boolean).sort();
             const listMapelBersih = [...new Set(FILTER_LIST_MAPEL)].filter(Boolean).sort();
 
