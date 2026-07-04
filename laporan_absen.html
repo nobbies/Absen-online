@@ -32,7 +32,7 @@
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <span class="text-xl font-bold text-slate-900">SmartAbsen <span class="text-blue-600">Pro</span></span>
-                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database & Log Verified</span>
+                <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-sm border border-blue-100">Database Engine v2</span>
             </div>
             <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">← Kembali</a>
         </div>
@@ -91,21 +91,18 @@
             <div id="filter-prompt" class="text-center py-12 bg-white">
                 <div id="prompt-icon" class="text-slate-300 text-5xl mb-2">⏳</div>
                 <h3 id="prompt-title" class="text-base font-bold text-slate-700">Menghubungkan ke Google Sheet...</h3>
-                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Sinkronisasi Struktur Database Induk.</p>
+                <p id="prompt-desc" class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Mengunduh konfigurasi database harian.</p>
             </div>
         </div>
     </main>
 
     <script>
-        // =========================================================================
-        // PENTING: GANTI ID DI BAWAH INI DENGAN ID SPREADSHEET GOOGLE SHEET ANDA
-        // ID diambil dari link browser Anda (antara /d/ dan /edit)
-        // =========================================================================
-        const SPREADSHEET_ID = "https://docs.google.com/spreadsheets/u/0/d/1UzqWGBKjHNcnBSz3UexIktAF7JY5-E13qiAo5AIXo2o/htmlview?pli=1"; // Contoh ID Anda
-
-        // Metode Ekspor CSV Google resmi yang mendukung multi-sheet (multi-gid) secara aman
-        const URL_DATABASE = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0`; 
-        const URL_LOG_ABSEN = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=1815124151`; 
+        // Masukkan kembali link publikasi Google Sheet utama Anda di bawah ini
+        const LINK_PUBLIKASI_UTAMA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR9ciCklD_sYvWUD1DWEUeVqjk2Qsx7KPx_lA-ESgB2Klgmn6tA5rkuDW19R_FMurmaXu89xwmFtEGX/pub?output=csv";
+        
+        // Membentuk URL pemanggilan bersih per sheet dengan GID terisolasi
+        const URL_DATABASE = LINK_PUBLIKASI_UTAMA.split('?')[0] + "?output=csv&gid=0";
+        const URL_LOG_ABSEN = LINK_PUBLIKASI_UTAMA.split('?')[0] + "?output=csv&gid=1815124151";
 
         let MASTER_DATABASE_SISWA = [];
         let FILTER_LIST_KELAS = [];
@@ -141,19 +138,19 @@
 
         async function muatSeluruhData() {
             try {
-                // 1. Unduh data Sheet Database
+                // 1. Ambil data Sheet Database induk
                 const resDb = await fetch(URL_DATABASE);
-                if (!resDb.ok) throw new Error("Gagal mengambil Database");
+                if (!resDb.ok) throw new Error("Gagal mengambil data Sheet Database");
                 const textDb = await resDb.text();
                 prosesDatabaseSiswa(textDb);
 
-                // 2. Unduh data Sheet Log_Absen
+                // 2. Ambil data Sheet Log Absensi harian
                 const resLog = await fetch(URL_LOG_ABSEN);
-                if (!resLog.ok) throw new Error("Gagal mengambil Log Absen");
+                if (!resLog.ok) throw new Error("Gagal mengambil data Sheet Log_Absen");
                 const textLog = await resLog.text();
                 prosesLogAbsen(textLog);
 
-                // Aktifkan Kontrol Fitur
+                // Mengaktifkan filter kontrol form jika sukses
                 [filterKelas, filterMapel, filterBulanAwal, filterBulanAkhir, btnTampilkan].forEach(el => {
                     el.disabled = false;
                     el.classList.remove('bg-slate-100');
@@ -163,14 +160,14 @@
 
                 promptIcon.innerText = "🔍";
                 promptTitle.innerText = "Silakan Pilih Filter & Klik Tampilkan";
-                promptDesc.innerText = "Database sukses disinkronkan. Tentukan kelas dan mapel lalu tekan tombol Tampilkan Laporan.";
-                subJudul.innerText = `Terhubung ke Google Sheet. Memuat ${MASTER_DATABASE_SISWA.length} daftar nama tetap siswa.`;
+                promptDesc.innerText = "Data tersinkronisasi. Tentukan kelas dan mapel rekapitulasi di atas.";
+                subJudul.innerText = `Terhubung ke Google Sheet. Memuat ${MASTER_DATABASE_SISWA.length} daftar siswa tetap.`;
 
             } catch (error) {
                 console.error(error);
                 promptIcon.innerText = "❌";
-                promptTitle.innerText = "Gagal Sinkronisasi Multi-Sheet";
-                promptDesc.innerText = "Pastikan setelan berbagi link Google Sheet Anda diubah menjadi 'Siapa saja yang memiliki link dapat melihat'.";
+                promptTitle.innerText = "Gagal Sinkronisasi Data";
+                promptDesc.innerText = "Pastikan setelan file Google Sheet Anda dipublikasikan ke web dengan opsi 'Seluruh Dokumen'.";
             }
         }
 
@@ -188,10 +185,11 @@
                 if (columns.length >= 3) {
                     const idSiswa = columns[0].trim();
                     const nama = columns[1].trim();
-                    const kelasBawaan = columns[2].trim(); // Kolom C (Kelas masing-masing siswa)
+                    const kelasBawaan = columns[2].trim(); // Kolom C (Kelas Siswa)
                     
-                    const mapelPilihan = columns[5] ? columns[5].trim() : ""; // Kolom F -> Dropdown Mapel Utama
-                    const kelasPilihan = columns[6] ? columns[6].trim() : ""; // Kolom G -> Dropdown Kelas Utama
+                    // Indeks Pemetaan Kolom F dan G Sheet Database
+                    const mapelPilihan = columns[5] ? columns[5].trim() : ""; // Kolom F -> Filter Mapel
+                    const kelasPilihan = columns[6] ? columns[6].trim() : ""; // Kolom G -> Filter Kelas Utama
 
                     if (nama && nama.toLowerCase() !== "nama") {
                         MASTER_DATABASE_SISWA.push({ id: idSiswa, nama: nama, kelas: kelasBawaan });
@@ -230,7 +228,6 @@
         }
 
         function setupDropdowns() {
-            // Dropdown diambil akurat murni dari array kolom F dan G Sheet Database
             const listKelasBersih = [...new Set(FILTER_LIST_KELAS)].filter(Boolean).sort();
             const listMapelBersih = [...new Set(FILTER_LIST_MAPEL)].filter(Boolean).sort();
 
@@ -265,10 +262,8 @@
             filterPrompt.classList.add('hidden');
             subJudul.innerText = `Kelas: ${kelasAktif} | Mata Pelajaran: ${mapelAktif}`;
 
-            // 1. Kunci Daftar Urutan Siswa berdasarkan filter Kelas dari Sheet Database induk
             const daftarSiswaUrut = MASTER_DATABASE_SISWA.filter(s => s.kelas === kelasAktif);
 
-            // 2. Saring Log Absensi berdasarkan filter
             const logDisaring = DATA_LOG_ABSEN.filter(item => {
                 const blnItem = dapatkanFormatBulan(item.tanggal);
                 return item.kelas === kelasAktif &&
@@ -279,7 +274,6 @@
 
             const daftarTanggal = [...new Set(logDisaring.map(item => item.tanggal))].sort((a,b) => new Date(a) - new Date(b));
 
-            // HEADER TABEL
             let headHTML = `
                 <tr class="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-200">
                     <th class="p-3 text-center w-12 bg-slate-950">No</th>
